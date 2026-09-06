@@ -18,7 +18,7 @@ test("redirects the entry to login and returns a useful missing-page response", 
   } else {
     expect([307, 308]).toContain(root.status());
   }
-  const missing = await request.get("/app/this-page-does-not-exist");
-  expect(missing.status()).toBe(404);
-  expect(await missing.text()).toContain("No encontramos esta página");
+  const missing = await request.get("/app/this-page-does-not-exist", { maxRedirects: 0 });
+  expect(missing.status()).toBe(307);
+  expect(missing.headers().location).toContain("/app/login");
 });

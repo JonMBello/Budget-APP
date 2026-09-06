@@ -4,6 +4,7 @@ const config: NextConfig = {
   basePath: "/app",
   output: "standalone",
   poweredByHeader: false,
+  outputFileTracingExcludes: { "/*": ["./.env*", "./.data/**/*", "./tests/**/*", "./docs/**/*", "./.git/**/*"] },
   async headers() {
     return [{ source: "/:path*", headers: [
       { key: "X-Content-Type-Options", value: "nosniff" },
