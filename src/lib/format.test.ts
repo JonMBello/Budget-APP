@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDate, formatMoney, isCivilDate, parseAmount, periodHref } from "./format";
+import { formatDate, formatMoney, formatMonth, isCivilDate, parseAmount, periodHref } from "./format";
 
 describe("money and dates", () => {
   it("distinguishes missing/nonfinite amounts from a real zero or negative balance", () => {
@@ -16,6 +16,11 @@ describe("money and dates", () => {
     expect(isCivilDate("2026-9-01")).toBe(false);
     expect(formatDate("2026-09-01")).toMatch(/^1 sep/);
     expect(formatDate(null)).toBe("Sin fecha disponible");
+  });
+  it("formats valid months in Spanish", () => {
+    expect(formatMonth("2026-09")).toMatch(/septiembre de 2026/i);
+    expect(formatMonth(null)).toBe("Sin fecha disponible");
+    expect(formatMonth("invalid")).toBe("Sin fecha disponible");
   });
   it("preserves only validated month context in navigation", () => {
     expect(periodHref("/incomes", "2026-09")).toBe("/incomes?period=2026-09");

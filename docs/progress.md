@@ -20,6 +20,14 @@ Pruebas: Contratos Zod de formularios y DTOs, rate limit por IP/identidad, almac
 
 Resultado de verificación: `npm test` pasó con 59 pruebas unitarias y de componentes. `npm run test:e2e` pasó con 8 pruebas E2E contra el build de producción y servidor sintético de integración. Lint, tipos y build standalone correctos.
 
-## 03–09 · Pendientes
+## 03 · Cuentas, tarjetas y fechas de pago — base verificada
+
+Implementado: Catálogo integral de métodos de pago (tarjetas de crédito, cuentas de débito y efectivo), contratos Zod para alta y actualización (`createCardSchema`, `updateCardSchema`, `cardSchema`), validación obligatoria de día de corte y día límite de pago (1-31) exclusivamente para `CREDIT`, exclusión de datos bancarios sensibles (nunca CVV ni 16 dígitos, solo últimos 4 opcionales), endpoints BFF en `/app/bff/cards`, `/app/bff/cards/[id]` y `/app/bff/cards/[id]/preview`, vista de listado `/app/cards` con filtrado de activas/archivadas, vista de detalle `/app/cards/[id]`, modal y acción de archivo lógico (`DELETE`), y simulador interactivo de ciclos bancarios (`PurchaseSimulator`) que proyecta fecha de corte, fecha límite de pago, mes presupuestario impactado y cuenta regresiva de días.
+
+Pruebas: Contratos de validación de tarjetas y previsualización de estados de cuenta, pruebas de componentes React (`CardForm`, `PurchaseSimulator`, `CardVisual`, `CardDetail`, `CardList`), fixture sintético de ciclos bancarios en `tests/fixtures/api-server.mjs` y 4 nuevas pruebas E2E en Playwright cubriendo validación de días de ciclo en crédito, creación sin ciclos en débito/efectivo, simulación de ciclos antes/después del corte y archivo lógico sin eliminación física.
+
+Resultado de verificación: `npm test` pasó con 81 pruebas unitarias y de componentes. `npm run test:e2e` pasó con 12 pruebas E2E contra el build de producción standalone. Lint, tipos y build standalone correctos.
+
+## 04–09 · Pendientes
 
 Se implementarán incrementalmente según docs/roadmap.md. Los GAP de API deben revalidarse antes de integrar el flujo afectado. No se sustituyen automatismos financieros faltantes por éxito simulado.

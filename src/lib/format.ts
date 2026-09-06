@@ -31,3 +31,12 @@ export function periodHref(path: string, period: string | null): string {
   const safePeriod = validPeriod(period);
   return safePeriod ? `${path}?period=${safePeriod}` : path;
 }
+
+export function formatMonth(period: string | null): string {
+  const safe = validPeriod(period);
+  if (!safe) return "Sin fecha disponible";
+  const [year, month] = safe.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, 15));
+  const text = new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric", timeZone: "UTC" }).format(date);
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
