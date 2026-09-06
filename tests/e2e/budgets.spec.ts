@@ -1,7 +1,7 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 
 const origin = "http://127.0.0.1:3002";
-const credentials = { email: "test@example.test", password: "integration-only-password" };
+const credentials = { email: "budgets@example.test", password: "integration-only-password" };
 
 async function login(request: APIRequestContext) {
   return request.post("/app/bff/auth/login", {
@@ -11,6 +11,8 @@ async function login(request: APIRequestContext) {
 }
 
 test.describe("Budget Periods and Savings (FE-05)", () => {
+  test.describe.configure({ mode: "serial" });
+
   test("initializes budget period, rejecting invalid months and accepting valid year/month", async ({
     request,
   }) => {

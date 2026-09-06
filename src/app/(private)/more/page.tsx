@@ -8,6 +8,9 @@ export default function MorePage() {
         <Link className="button secondary" href="/budgets">
           Historial de presupuestos
         </Link>
+        <Link className="button secondary" href="/recurring">
+          Servicios, suscripciones y MSI
+        </Link>
         <Link className="button secondary" href="/cards">
           Tarjetas y cuentas
         </Link>

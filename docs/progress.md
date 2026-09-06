@@ -44,6 +44,14 @@ Pruebas: Contratos de validación de periodos y transiciones de fin de año, pru
 
 Resultado de verificación: `npm test` pasó con 121 pruebas unitarias y de componentes. `npm run test:coverage` pasó con 87.25% de cobertura en líneas. `npm run test:e2e` pasó con 22 pruebas E2E contra el build de producción standalone. Lint, tipos y build standalone correctos.
 
-## 06–09 · Pendientes
+## 06 · Servicios, suscripciones y MSI — base verificada
+
+Implementado: Catálogo y seguimiento de compromisos recurrentes mensuales y compras a plazos (`/app/recurring`), contratos Zod (`recurringCategorySchema`, `recurringSplitSchema`, `recurringTemplateSchema`, `createRecurringSchema`, `updateRecurringSchema`, `advanceMsiSchema`, `instantiateRecurringSchema`, y función `calculateMsiInstallments` con ajuste de centavos en la cuota final), endpoints BFF en `/app/bff/recurring`, `/app/bff/recurring/[id]`, `/app/bff/recurring/[id]/advance`, `/app/bff/recurring/[id]/cancel` y `/app/bff/recurring/instantiate`, vista de listado accesible con pestañas de filtro (Todas, Servicios, Suscripciones, MSI, Inactivas), generación mensual (`instantiate`) idempotente con diálogo de confirmación y resumen de conteo, vista de detalle `/app/recurring/[id]` con pausar/reanudar, cancelación definitiva con advertencia de retención de historial, modal para adelantar cuotas específicas o liquidar el saldo total de planes MSI (`MsiAdvanceModal`) con advertencia en planes compartidos con terceros, tarjeta visual (`RecurringCard`) con barra de progreso de cuotas y montos, y acceso directo desde el menú Más (`/app/more`).
+
+Pruebas: Contratos de validación para compromisos fijos y planes MSI con redondeo exacto de centavos, pruebas de componentes React (`RecurringCard`, `RecurringForm`, `MsiAdvanceModal`, `RecurringList`, `RecurringDetail`), endpoints sintéticos en `tests/fixtures/api-server.mjs`, y 6 nuevas pruebas E2E en Playwright cubriendo alta de servicios y suscripciones con validación de campos obligatorios, registro de MSI con redondeo de centavos y rechazo de cuota inicial mayor al plazo, pausado, reapertura y cancelación definitiva de compromisos, adelanto de cuotas y liquidación de saldo total de MSI, instanciación mensual idempotente, y renderizado de la página con filtrado por categoría.
+
+Resultado de verificación: `npm test` pasó con 143 pruebas unitarias y de componentes. `npm run test:coverage` pasó con 83.52% de cobertura en líneas. `npm run test:e2e` pasó con 28 pruebas E2E contra el build de producción standalone. Lint, tipos y build standalone correctos.
+
+## 07–09 · Pendientes
 
 Se implementarán incrementalmente según docs/roadmap.md. Los GAP de API deben revalidarse antes de integrar el flujo afectado. No se sustituyen automatismos financieros faltantes por éxito simulado.

@@ -33,6 +33,12 @@ function getPeople(userId) {
   return userPeople.get(userId);
 }
 
+const userRecurring = new Map();
+function getRecurring(userId) {
+  if (!userRecurring.has(userId)) userRecurring.set(userId, new Map());
+  return userRecurring.get(userId);
+}
+
 function getBudgets(userId) {
   if (!userBudgets.has(userId)) {
     const map = new Map();
@@ -441,7 +447,147 @@ const server = createServer(async (request, response) => {
     }
   }
 
-  if (["/api/incomes", "/api/expenses", "/api/recurring"].some((p) => pathname.startsWith(p))) {
+  // Recurring endpoints
+  if (pathname === "/api/recurring") {
+    const recurringMap = getRecurring(user.id);
+    if (request.method === "GET") {
+      const includeInactive = parsedUrl.searchParams.get("includeInactive") === "true";
+      const categoryFilter = parsedUrl.searchParams.get("category");
+      let list = Array.from(recurringMap.values());
+      if (!includeInactive) {
+        list = list.filter((r) => r.isActive && !r.isCancelled);
+      }
+      if (categoryFilter) {
+        list = list.filter((r) => r.category === categoryFilter);
+      }
+      return send(200, list);
+    }
+    if (request.method === "POST") {
+      if (!body.title || body.title.trim().length < 2) {
+        return send(400, { message: "Title must be at least 2 characters" });
+      }
+      if (!body.category || !body.amount || Number(body.amount) <= 0) {
+        return send(400, { message: "Valid category and positive amount required" });
+      }
+      if (body.category === "MSI") {
+        if (!body.totalInstallments || Number(body.totalInstallments) < 2) {
+          return send(400, { message: "MSI requires at least 2 installments" });
+        }
+        if (!body.totalAmount || Number(body.totalAmount) <= 0) {
+          return send(400, { message: "MSI requires totalAmount" });
+        }
+      }
+
+      const template = {
+        id: `rec-${randomUUID().slice(0, 8)}`,
+        userId: user.id,
+        title: body.title.trim(),
+        category: body.category,
+        amount: Number(body.amount),
+        currency: body.currency || "MXN",
+        exchangeRate: body.exchangeRate,
+        totalAmount: body.totalAmount ? Number(body.totalAmount) : undefined,
+        totalInstallments: body.totalInstallments ? Number(body.totalInstallments) : undefined,
+        currentInstallment: body.currentInstallment ? Number(body.currentInstallment) : (body.category === "MSI" ? 1 : undefined),
+        startDate: body.startDate,
+        cardId: body.cardId || undefined,
+        split: body.split || undefined,
+        isActive: true,
+        isCancelled: false,
+        notes: body.notes ? body.notes.trim() : undefined,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      recurringMap.set(template.id, template);
+      return send(201, template);
+    }
+  }
+
+  if (pathname === "/api/recurring/instantiate" && request.method === "POST") {
+    const recurringMap = getRecurring(user.id);
+    let count = 0;
+    for (const template of recurringMap.values()) {
+      if (template.isActive && !template.isCancelled) {
+        count++;
+        if (template.category === "MSI" && template.currentInstallment && template.totalInstallments) {
+          if (template.currentInstallment < template.totalInstallments) {
+            template.currentInstallment++;
+          } else {
+            template.isActive = false;
+          }
+          template.updatedAt = new Date().toISOString();
+        }
+      }
+    }
+    return send(200, { success: true, count, year: body.year, month: body.month });
+  }
+
+  const recurringMatch = pathname.match(/^\/api\/recurring\/([^/]+)$/);
+  if (recurringMatch) {
+    const recId = recurringMatch[1];
+    const recurringMap = getRecurring(user.id);
+    const template = recurringMap.get(recId);
+    if (!template) return send(404, { message: "Recurring template not found" });
+
+    if (request.method === "GET") return send(200, template);
+    if (request.method === "PATCH") {
+      if (body.title) template.title = body.title.trim();
+      if (body.amount !== undefined) template.amount = Number(body.amount);
+      if (body.cardId !== undefined) template.cardId = body.cardId || undefined;
+      if (body.split !== undefined) template.split = body.split || undefined;
+      if (body.notes !== undefined) template.notes = body.notes ? body.notes.trim() : undefined;
+      if (body.isActive !== undefined) template.isActive = Boolean(body.isActive);
+      template.updatedAt = new Date().toISOString();
+      return send(200, template);
+    }
+    if (request.method === "DELETE") {
+      template.isActive = false;
+      template.updatedAt = new Date().toISOString();
+      return send(200, template);
+    }
+  }
+
+  const recurringCancelMatch = pathname.match(/^\/api\/recurring\/([^/]+)\/cancel$/);
+  if (recurringCancelMatch && request.method === "PATCH") {
+    const recId = recurringCancelMatch[1];
+    const recurringMap = getRecurring(user.id);
+    const template = recurringMap.get(recId);
+    if (!template) return send(404, { message: "Recurring template not found" });
+    template.isCancelled = true;
+    template.isActive = false;
+    template.updatedAt = new Date().toISOString();
+    return send(200, template);
+  }
+
+  const recurringAdvanceMatch = pathname.match(/^\/api\/recurring\/([^/]+)\/advance$/);
+  if (recurringAdvanceMatch && request.method === "POST") {
+    const recId = recurringAdvanceMatch[1];
+    const recurringMap = getRecurring(user.id);
+    const template = recurringMap.get(recId);
+    if (!template) return send(404, { message: "Recurring template not found" });
+    if (template.category !== "MSI") return send(400, { message: "Only MSI plans can be advanced" });
+
+    if (body.payAll) {
+      template.currentInstallment = template.totalInstallments;
+      template.isActive = false;
+    } else if (body.installmentsCount) {
+      const advanceBy = Number(body.installmentsCount);
+      template.currentInstallment = Math.min(
+        template.totalInstallments || 1,
+        (template.currentInstallment || 1) + advanceBy,
+      );
+      if (template.currentInstallment >= (template.totalInstallments || 1)) {
+        template.isActive = false;
+      }
+    }
+    if (body.notes) {
+      template.notes = template.notes ? `${template.notes}. ${body.notes}` : body.notes;
+    }
+    template.updatedAt = new Date().toISOString();
+    return send(200, template);
+  }
+
+  if (["/api/incomes", "/api/expenses"].some((p) => pathname.startsWith(p))) {
     return send(200, []);
   }
 
