@@ -1,0 +1,645 @@
+[
+  {
+    "ticket": "FE-01.1",
+    "story": "HU-FE-01.1",
+    "title": "Base Next.js y calidad",
+    "feature": "01-setup-and-infrastructure",
+    "priority": "P0",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [],
+    "api_dependencies": [],
+    "document": "features/01-setup-and-infrastructure/README.md"
+  },
+  {
+    "ticket": "FE-01.2",
+    "story": "HU-FE-01.2",
+    "title": "Cliente API y capa de servidor",
+    "feature": "01-setup-and-infrastructure",
+    "priority": "P0",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-01.1"
+    ],
+    "api_dependencies": [],
+    "document": "features/01-setup-and-infrastructure/README.md"
+  },
+  {
+    "ticket": "FE-01.3",
+    "story": "HU-FE-01.3",
+    "title": "Navegación iPhone, iPad y Mac",
+    "feature": "01-setup-and-infrastructure",
+    "priority": "P1",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-01.1"
+    ],
+    "api_dependencies": [],
+    "document": "features/01-setup-and-infrastructure/README.md"
+  },
+  {
+    "ticket": "FE-01.4",
+    "story": "HU-FE-01.4",
+    "title": "Sistema visual oscuro y estados comunes",
+    "feature": "01-setup-and-infrastructure",
+    "priority": "P1",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-01.1"
+    ],
+    "api_dependencies": [],
+    "document": "features/01-setup-and-infrastructure/README.md"
+  },
+  {
+    "ticket": "FE-01.5",
+    "story": "HU-FE-01.5",
+    "title": "Despliegue en el VPS",
+    "feature": "01-setup-and-infrastructure",
+    "priority": "P0",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-01.2",
+      "FE-02.1",
+      "FE-09.1"
+    ],
+    "api_dependencies": [],
+    "document": "features/01-setup-and-infrastructure/README.md"
+  },
+  {
+    "ticket": "FE-02.1",
+    "story": "HU-FE-02.1",
+    "title": "Inicio de sesión y protección de rutas",
+    "feature": "02-auth-and-users",
+    "priority": "P0",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-01.2"
+    ],
+    "api_dependencies": [],
+    "document": "features/02-auth-and-users/README.md"
+  },
+  {
+    "ticket": "FE-02.2",
+    "story": "HU-FE-02.2",
+    "title": "Renovación y cierre de sesión",
+    "feature": "02-auth-and-users",
+    "priority": "P0",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-02.1"
+    ],
+    "api_dependencies": [
+      "GAP-11",
+      "GAP-12"
+    ],
+    "document": "features/02-auth-and-users/README.md"
+  },
+  {
+    "ticket": "FE-02.3",
+    "story": "HU-FE-02.3",
+    "title": "Registro con invitación",
+    "feature": "02-auth-and-users",
+    "priority": "P1",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-02.1"
+    ],
+    "api_dependencies": [],
+    "document": "features/02-auth-and-users/README.md"
+  },
+  {
+    "ticket": "FE-02.4",
+    "story": "HU-FE-02.4",
+    "title": "Perfil y moneda",
+    "feature": "02-auth-and-users",
+    "priority": "P1",
+    "points": 2,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-02.1"
+    ],
+    "api_dependencies": [
+      "GAP-10"
+    ],
+    "document": "features/02-auth-and-users/README.md"
+  },
+  {
+    "ticket": "FE-03.1",
+    "story": "HU-FE-03.1",
+    "title": "Catálogo de métodos de pago",
+    "feature": "03-cards-and-accounts",
+    "priority": "P1",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-02.1",
+      "FE-01.4"
+    ],
+    "api_dependencies": [],
+    "document": "features/03-cards-and-accounts/README.md"
+  },
+  {
+    "ticket": "FE-03.2",
+    "story": "HU-FE-03.2",
+    "title": "Detalle y archivo de tarjetas",
+    "feature": "03-cards-and-accounts",
+    "priority": "P1",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-03.1",
+      "FE-07.1"
+    ],
+    "api_dependencies": [],
+    "document": "features/03-cards-and-accounts/README.md"
+  },
+  {
+    "ticket": "FE-03.3",
+    "story": "HU-FE-03.3",
+    "title": "Simular fecha de compra",
+    "feature": "03-cards-and-accounts",
+    "priority": "P1",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-03.1",
+      "FE-05.1"
+    ],
+    "api_dependencies": [
+      "GAP-08"
+    ],
+    "document": "features/03-cards-and-accounts/README.md"
+  },
+  {
+    "ticket": "FE-04.1",
+    "story": "HU-FE-04.1",
+    "title": "Directorio de personas",
+    "feature": "04-people-and-debts",
+    "priority": "P1",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-02.1",
+      "FE-01.4"
+    ],
+    "api_dependencies": [],
+    "document": "features/04-people-and-debts/README.md"
+  },
+  {
+    "ticket": "FE-04.2",
+    "story": "HU-FE-04.2",
+    "title": "Resumen global e inmediato",
+    "feature": "04-people-and-debts",
+    "priority": "P1",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-04.1",
+      "FE-07.3"
+    ],
+    "api_dependencies": [
+      "GAP-05"
+    ],
+    "document": "features/04-people-and-debts/README.md"
+  },
+  {
+    "ticket": "FE-04.3",
+    "story": "HU-FE-04.3",
+    "title": "Registrar cobro específico",
+    "feature": "04-people-and-debts",
+    "priority": "P0",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-04.2",
+      "FE-07.3"
+    ],
+    "api_dependencies": [
+      "GAP-04"
+    ],
+    "document": "features/04-people-and-debts/README.md"
+  },
+  {
+    "ticket": "FE-04.4",
+    "story": "HU-FE-04.4",
+    "title": "Abonos, perdón y fin de deuda recurrente",
+    "feature": "04-people-and-debts",
+    "priority": "P1",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-04.3",
+      "FE-06.4"
+    ],
+    "api_dependencies": [
+      "GAP-04",
+      "GAP-06"
+    ],
+    "document": "features/04-people-and-debts/README.md"
+  },
+  {
+    "ticket": "FE-05.1",
+    "story": "HU-FE-05.1",
+    "title": "Elegir e inicializar un mes",
+    "feature": "05-budget-periods-and-savings",
+    "priority": "P0",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-02.1"
+    ],
+    "api_dependencies": [],
+    "document": "features/05-budget-periods-and-savings/README.md"
+  },
+  {
+    "ticket": "FE-05.2",
+    "story": "HU-FE-05.2",
+    "title": "Historial mensual",
+    "feature": "05-budget-periods-and-savings",
+    "priority": "P1",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-05.1",
+      "FE-08.1"
+    ],
+    "api_dependencies": [
+      "GAP-03"
+    ],
+    "document": "features/05-budget-periods-and-savings/README.md"
+  },
+  {
+    "ticket": "FE-05.3",
+    "story": "HU-FE-05.3",
+    "title": "Ahorro acarreado editable",
+    "feature": "05-budget-periods-and-savings",
+    "priority": "P0",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-05.1",
+      "FE-08.1"
+    ],
+    "api_dependencies": [
+      "GAP-03"
+    ],
+    "document": "features/05-budget-periods-and-savings/README.md"
+  },
+  {
+    "ticket": "FE-05.4",
+    "story": "HU-FE-05.4",
+    "title": "Cerrar y reabrir un periodo",
+    "feature": "05-budget-periods-and-savings",
+    "priority": "P1",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-05.1",
+      "FE-07.2"
+    ],
+    "api_dependencies": [
+      "GAP-07"
+    ],
+    "document": "features/05-budget-periods-and-savings/README.md"
+  },
+  {
+    "ticket": "FE-06.1",
+    "story": "HU-FE-06.1",
+    "title": "Servicios y suscripciones",
+    "feature": "06-recurring-and-msi",
+    "priority": "P1",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-03.1",
+      "FE-04.1",
+      "FE-07.3"
+    ],
+    "api_dependencies": [
+      "GAP-01",
+      "GAP-13"
+    ],
+    "document": "features/06-recurring-and-msi/README.md"
+  },
+  {
+    "ticket": "FE-06.2",
+    "story": "HU-FE-06.2",
+    "title": "Registrar y seguir MSI",
+    "feature": "06-recurring-and-msi",
+    "priority": "P1",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-06.1"
+    ],
+    "api_dependencies": [
+      "GAP-01"
+    ],
+    "document": "features/06-recurring-and-msi/README.md"
+  },
+  {
+    "ticket": "FE-06.3",
+    "story": "HU-FE-06.3",
+    "title": "Generación mensual automática",
+    "feature": "06-recurring-and-msi",
+    "priority": "P0",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-05.1",
+      "FE-06.2",
+      "FE-07.1"
+    ],
+    "api_dependencies": [
+      "GAP-01"
+    ],
+    "document": "features/06-recurring-and-msi/README.md"
+  },
+  {
+    "ticket": "FE-06.4",
+    "story": "HU-FE-06.4",
+    "title": "Pausar y cancelar recurrencias",
+    "feature": "06-recurring-and-msi",
+    "priority": "P1",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-06.3"
+    ],
+    "api_dependencies": [
+      "GAP-06"
+    ],
+    "document": "features/06-recurring-and-msi/README.md"
+  },
+  {
+    "ticket": "FE-06.5",
+    "story": "HU-FE-06.5",
+    "title": "Adelantar o liquidar MSI",
+    "feature": "06-recurring-and-msi",
+    "priority": "P1",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-06.3",
+      "FE-04.3"
+    ],
+    "api_dependencies": [
+      "GAP-06"
+    ],
+    "document": "features/06-recurring-and-msi/README.md"
+  },
+  {
+    "ticket": "FE-07.1",
+    "story": "HU-FE-07.1",
+    "title": "Capturar gastos",
+    "feature": "07-transactions-and-splits",
+    "priority": "P0",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-05.1",
+      "FE-03.1",
+      "FE-01.4"
+    ],
+    "api_dependencies": [
+      "GAP-08"
+    ],
+    "document": "features/07-transactions-and-splits/README.md"
+  },
+  {
+    "ticket": "FE-07.2",
+    "story": "HU-FE-07.2",
+    "title": "Editar, pagar y eliminar gastos",
+    "feature": "07-transactions-and-splits",
+    "priority": "P0",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-07.1"
+    ],
+    "api_dependencies": [
+      "GAP-09",
+      "GAP-06"
+    ],
+    "document": "features/07-transactions-and-splits/README.md"
+  },
+  {
+    "ticket": "FE-07.3",
+    "story": "HU-FE-07.3",
+    "title": "Dividir por cantidad o porcentaje",
+    "feature": "07-transactions-and-splits",
+    "priority": "P0",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-07.1",
+      "FE-04.1"
+    ],
+    "api_dependencies": [
+      "GAP-09"
+    ],
+    "document": "features/07-transactions-and-splits/README.md"
+  },
+  {
+    "ticket": "FE-07.4",
+    "story": "HU-FE-07.4",
+    "title": "Alta de ingresos por fuente",
+    "feature": "07-transactions-and-splits",
+    "priority": "P0",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-05.1",
+      "FE-01.4"
+    ],
+    "api_dependencies": [
+      "GAP-03"
+    ],
+    "document": "features/07-transactions-and-splits/README.md"
+  },
+  {
+    "ticket": "FE-07.5",
+    "story": "HU-FE-07.5",
+    "title": "Editar y eliminar ingresos",
+    "feature": "07-transactions-and-splits",
+    "priority": "P0",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-07.4"
+    ],
+    "api_dependencies": [
+      "GAP-03",
+      "GAP-09"
+    ],
+    "document": "features/07-transactions-and-splits/README.md"
+  },
+  {
+    "ticket": "FE-07.6",
+    "story": "HU-FE-07.6",
+    "title": "Copiar ingresos al siguiente mes",
+    "feature": "07-transactions-and-splits",
+    "priority": "P1",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-07.4",
+      "FE-05.1"
+    ],
+    "api_dependencies": [
+      "GAP-02",
+      "GAP-03"
+    ],
+    "document": "features/07-transactions-and-splits/README.md"
+  },
+  {
+    "ticket": "FE-08.1",
+    "story": "HU-FE-08.1",
+    "title": "Inicio con balance actualizado",
+    "feature": "08-metrics-and-cashflow",
+    "priority": "P0",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-05.1",
+      "FE-01.2"
+    ],
+    "api_dependencies": [],
+    "document": "features/08-metrics-and-cashflow/README.md"
+  },
+  {
+    "ticket": "FE-08.2",
+    "story": "HU-FE-08.2",
+    "title": "Remanente de nómina",
+    "feature": "08-metrics-and-cashflow",
+    "priority": "P0",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-08.1"
+    ],
+    "api_dependencies": [
+      "GAP-13"
+    ],
+    "document": "features/08-metrics-and-cashflow/README.md"
+  },
+  {
+    "ticket": "FE-08.3",
+    "story": "HU-FE-08.3",
+    "title": "Agenda de pagos y cobros",
+    "feature": "08-metrics-and-cashflow",
+    "priority": "P1",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-08.1",
+      "FE-04.2",
+      "FE-07.2"
+    ],
+    "api_dependencies": [
+      "GAP-05"
+    ],
+    "document": "features/08-metrics-and-cashflow/README.md"
+  },
+  {
+    "ticket": "FE-08.4",
+    "story": "HU-FE-08.4",
+    "title": "Consistencia al cambiar de dispositivo",
+    "feature": "08-metrics-and-cashflow",
+    "priority": "P1",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-08.1",
+      "FE-07.5"
+    ],
+    "api_dependencies": [],
+    "document": "features/08-metrics-and-cashflow/README.md"
+  },
+  {
+    "ticket": "FE-09.1",
+    "story": "HU-FE-09.1",
+    "title": "Instalación PWA",
+    "feature": "09-notifications-and-reminders",
+    "priority": "P0",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-01.3",
+      "FE-02.1"
+    ],
+    "api_dependencies": [],
+    "document": "features/09-notifications-and-reminders/README.md"
+  },
+  {
+    "ticket": "FE-09.2",
+    "story": "HU-FE-09.2",
+    "title": "Sin conexión y actualización de app",
+    "feature": "09-notifications-and-reminders",
+    "priority": "P1",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-09.1"
+    ],
+    "api_dependencies": [],
+    "document": "features/09-notifications-and-reminders/README.md"
+  },
+  {
+    "ticket": "FE-09.3",
+    "story": "HU-FE-09.3",
+    "title": "Activar y desactivar push",
+    "feature": "09-notifications-and-reminders",
+    "priority": "P1",
+    "points": 5,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-09.1",
+      "FE-02.2"
+    ],
+    "api_dependencies": [
+      "GAP-12"
+    ],
+    "document": "features/09-notifications-and-reminders/README.md"
+  },
+  {
+    "ticket": "FE-09.4",
+    "story": "HU-FE-09.4",
+    "title": "Correo y prueba de avisos",
+    "feature": "09-notifications-and-reminders",
+    "priority": "P1",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-09.3"
+    ],
+    "api_dependencies": [
+      "GAP-12"
+    ],
+    "document": "features/09-notifications-and-reminders/README.md"
+  },
+  {
+    "ticket": "FE-09.5",
+    "story": "HU-FE-09.5",
+    "title": "Recordatorios de vencimiento confiables",
+    "feature": "09-notifications-and-reminders",
+    "priority": "P1",
+    "points": 3,
+    "status": "pending",
+    "frontend_dependencies": [
+      "FE-09.4",
+      "FE-08.3"
+    ],
+    "api_dependencies": [
+      "GAP-14"
+    ],
+    "document": "features/09-notifications-and-reminders/README.md"
+  }
+]
