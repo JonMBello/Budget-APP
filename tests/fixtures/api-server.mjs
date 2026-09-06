@@ -39,6 +39,18 @@ function getRecurring(userId) {
   return userRecurring.get(userId);
 }
 
+const userIncomes = new Map();
+function getIncomes(userId) {
+  if (!userIncomes.has(userId)) userIncomes.set(userId, new Map());
+  return userIncomes.get(userId);
+}
+
+const userExpenses = new Map();
+function getExpenses(userId) {
+  if (!userExpenses.has(userId)) userExpenses.set(userId, new Map());
+  return userExpenses.get(userId);
+}
+
 function getBudgets(userId) {
   if (!userBudgets.has(userId)) {
     const map = new Map();
@@ -316,19 +328,33 @@ const server = createServer(async (request, response) => {
     );
     if (sorted.length === 0) return send(404, { message: "No active budget found" });
     const period = sorted[0];
-    const netBalance = period.totalIncome - period.totalExpenses;
+    const key = `${period.year}-${String(period.month).padStart(2, "0")}`;
+    const userIncs = Array.from(getIncomes(user.id).values()).filter(
+      (i) => i.periodId === period.id || i.periodId === key || i.periodId === `p-${key}`
+    );
+    const userExps = Array.from(getExpenses(user.id).values()).filter(
+      (e) => e.periodId === period.id || e.periodId === key || e.periodId === `p-${key}`
+    );
+    const totalIncome = userIncs.length > 0 ? userIncs.reduce((sum, i) => sum + i.amount, 0) : period.totalIncome;
+    const totalExpenses = userExps.length > 0 ? userExps.reduce((sum, e) => sum + e.amount, 0) : period.totalExpenses;
+    const totalReceivedIncome = userIncs.filter((i) => i.isReceived).reduce((sum, i) => sum + i.amount, 0);
+    const totalPaidExpenses = userExps.filter((e) => e.isPaid).reduce((sum, e) => sum + e.amount, 0);
+
+    const netBalance = totalIncome - totalExpenses;
     const projectedSavings = period.carriedSavings + netBalance;
+    const cashInPocketBalance = period.carriedSavings + (userIncs.length > 0 ? totalReceivedIncome : totalIncome) - (userExps.length > 0 ? totalPaidExpenses : totalExpenses);
+
     return send(200, {
       periodId: period.id,
       year: period.year,
       month: period.month,
       status: period.status,
-      totalIncome: period.totalIncome,
-      totalExpenses: period.totalExpenses,
+      totalIncome,
+      totalExpenses,
       netBalance,
       carriedSavings: period.carriedSavings,
       projectedSavings,
-      cashInPocketBalance: netBalance,
+      cashInPocketBalance,
     });
   }
 
@@ -373,19 +399,32 @@ const server = createServer(async (request, response) => {
     const period = budgetsMap.get(key);
     if (!period) return send(404, { message: "Budget period not found" });
 
-    const netBalance = period.totalIncome - period.totalExpenses;
+    const userIncs = Array.from(getIncomes(user.id).values()).filter(
+      (i) => i.periodId === period.id || i.periodId === key || i.periodId === `p-${key}`
+    );
+    const userExps = Array.from(getExpenses(user.id).values()).filter(
+      (e) => e.periodId === period.id || e.periodId === key || e.periodId === `p-${key}`
+    );
+    const totalIncome = userIncs.length > 0 ? userIncs.reduce((sum, i) => sum + i.amount, 0) : period.totalIncome;
+    const totalExpenses = userExps.length > 0 ? userExps.reduce((sum, e) => sum + e.amount, 0) : period.totalExpenses;
+    const totalReceivedIncome = userIncs.filter((i) => i.isReceived).reduce((sum, i) => sum + i.amount, 0);
+    const totalPaidExpenses = userExps.filter((e) => e.isPaid).reduce((sum, e) => sum + e.amount, 0);
+
+    const netBalance = totalIncome - totalExpenses;
     const projectedSavings = period.carriedSavings + netBalance;
+    const cashInPocketBalance = period.carriedSavings + (userIncs.length > 0 ? totalReceivedIncome : totalIncome) - (userExps.length > 0 ? totalPaidExpenses : totalExpenses);
+
     return send(200, {
       periodId: period.id,
       year: period.year,
       month: period.month,
       status: period.status,
-      totalIncome: period.totalIncome,
-      totalExpenses: period.totalExpenses,
+      totalIncome,
+      totalExpenses,
       netBalance,
       carriedSavings: period.carriedSavings,
       projectedSavings,
-      cashInPocketBalance: netBalance,
+      cashInPocketBalance,
     });
   }
 
@@ -587,8 +626,306 @@ const server = createServer(async (request, response) => {
     return send(200, template);
   }
 
-  if (["/api/incomes", "/api/expenses"].some((p) => pathname.startsWith(p))) {
-    return send(200, []);
+  // Incomes copy-from-previous-month
+  if (pathname === "/api/incomes/copy-from-previous-month" && request.method === "POST") {
+    const { fromPeriodId, toPeriodId } = body;
+    if (!fromPeriodId || !toPeriodId) return send(400, { message: "fromPeriodId and toPeriodId are required" });
+
+    // Check if destination is closed
+    const budgetsMap = getBudgets(user.id);
+    for (const b of budgetsMap.values()) {
+      if ((b.id === toPeriodId || `${b.year}-${String(b.month).padStart(2, "0")}` === toPeriodId) && b.status === "CLOSED") {
+        return send(400, { message: "Cannot copy incomes to a closed period" });
+      }
+    }
+
+    const incomesMap = getIncomes(user.id);
+    const fromIncomes = Array.from(incomesMap.values()).filter(
+      (inc) => (inc.periodId === fromPeriodId || inc.periodId === `p-${fromPeriodId}`) && inc.source !== "DEBT_COLLECTION"
+    );
+
+    const cleanTo = toPeriodId.replace(/^p-/, "");
+    let targetYear = null;
+    let targetMonth = null;
+    for (const b of budgetsMap.values()) {
+      if (b.id === toPeriodId || `${b.year}-${String(b.month).padStart(2, "0")}` === cleanTo) {
+        targetYear = b.year;
+        targetMonth = b.month;
+        break;
+      }
+    }
+    if (!targetYear) {
+      const parts = cleanTo.split("-").map(Number);
+      if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+        targetYear = parts[0];
+        targetMonth = parts[1];
+      }
+    }
+    const maxDays = targetYear && targetMonth ? new Date(targetYear, targetMonth, 0).getDate() : 28;
+
+
+    let copiedCount = 0;
+    const copiedItems = [];
+
+    for (const orig of fromIncomes) {
+      const alreadyExists = Array.from(incomesMap.values()).some(
+        (inc) => (inc.periodId === toPeriodId || inc.periodId === `p-${toPeriodId}`) && inc.title === orig.title
+      );
+      if (!alreadyExists) {
+        let newDate = orig.date;
+        if (targetYear && targetMonth) {
+          const origDay = Number(orig.date.slice(8, 10)) || 1;
+          const cappedDay = Math.min(origDay, maxDays);
+          newDate = `${targetYear}-${String(targetMonth).padStart(2, "0")}-${String(cappedDay).padStart(2, "0")}`;
+        }
+        const newIncome = {
+          id: "inc-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+          userId: user.id,
+          periodId: toPeriodId,
+          title: orig.title,
+          amount: orig.amount,
+          date: newDate,
+          source: orig.source,
+          isReceived: false,
+          notes: orig.notes,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        incomesMap.set(newIncome.id, newIncome);
+        copiedItems.push(newIncome);
+        copiedCount++;
+      }
+    }
+    return send(200, { success: true, count: copiedCount, items: copiedItems });
+  }
+
+  // Incomes collection
+  if (pathname === "/api/incomes") {
+    const incomesMap = getIncomes(user.id);
+    if (request.method === "GET") {
+      const periodId = parsedUrl.searchParams.get("periodId");
+      let list = Array.from(incomesMap.values());
+      if (periodId) {
+        list = list.filter((i) => i.periodId === periodId || i.periodId === `p-${periodId}` || `p-${i.periodId}` === periodId);
+      }
+      return send(200, list);
+    }
+    if (request.method === "POST") {
+      if (!body.title || !body.title.trim()) return send(400, { message: "Title is required" });
+      if (!body.amount || Number(body.amount) <= 0) return send(400, { message: "Amount must be positive" });
+      if (!body.date) return send(400, { message: "Date is required" });
+      if (!body.source) return send(400, { message: "Source is required" });
+      if (!body.periodId) return send(400, { message: "Period is required" });
+
+      const budgetsMap = getBudgets(user.id);
+      for (const b of budgetsMap.values()) {
+        if ((b.id === body.periodId || `${b.year}-${String(b.month).padStart(2, "0")}` === body.periodId) && b.status === "CLOSED") {
+          return send(400, { message: "Cannot add incomes to a closed budget period" });
+        }
+      }
+
+      const income = {
+        id: "inc-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+        userId: user.id,
+        periodId: body.periodId,
+        title: body.title.trim(),
+        amount: Number(body.amount),
+        date: body.date,
+        source: body.source,
+        isReceived: Boolean(body.isReceived),
+        dueDate: body.dueDate || undefined,
+        debtorPersonId: body.debtorPersonId || undefined,
+        notes: body.notes ? body.notes.trim() : undefined,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      incomesMap.set(income.id, income);
+      return send(201, income);
+    }
+  }
+
+  // Incomes single item
+  const incomeMatch = pathname.match(/^\/api\/incomes\/([^/]+)$/);
+  if (incomeMatch) {
+    const incId = incomeMatch[1];
+    const incomesMap = getIncomes(user.id);
+    const income = incomesMap.get(incId);
+    if (!income) return send(404, { message: "Income not found" });
+
+    if (request.method === "GET") return send(200, income);
+    if (request.method === "PATCH") {
+      if (body.title) income.title = body.title.trim();
+      if (body.amount !== undefined) income.amount = Number(body.amount);
+      if (body.date) income.date = body.date;
+      if (body.source) income.source = body.source;
+      if (body.isReceived !== undefined) income.isReceived = Boolean(body.isReceived);
+      if (body.dueDate !== undefined) income.dueDate = body.dueDate || undefined;
+      if (body.notes !== undefined) income.notes = body.notes ? body.notes.trim() : undefined;
+      income.updatedAt = new Date().toISOString();
+      return send(200, income);
+    }
+    if (request.method === "DELETE") {
+      if (income.linkedExpenseId && income.isReceived) {
+        return send(400, { message: "Cannot delete a received debt collection income" });
+      }
+      incomesMap.delete(incId);
+      return send(200, { success: true });
+    }
+  }
+
+  // Expenses collection
+  if (pathname === "/api/expenses") {
+    const expensesMap = getExpenses(user.id);
+    const incomesMap = getIncomes(user.id);
+
+    if (request.method === "GET") {
+      const periodId = parsedUrl.searchParams.get("periodId");
+      const category = parsedUrl.searchParams.get("category");
+      let list = Array.from(expensesMap.values());
+      if (periodId) {
+        list = list.filter((e) => e.periodId === periodId || e.periodId === `p-${periodId}` || `p-${e.periodId}` === periodId);
+      }
+      if (category) {
+        list = list.filter((e) => e.category === category);
+      }
+      return send(200, list);
+    }
+    if (request.method === "POST") {
+      if (!body.title || !body.title.trim()) return send(400, { message: "Title is required" });
+      if (!body.amount || Number(body.amount) <= 0) return send(400, { message: "Amount must be positive" });
+      if (!body.category) return send(400, { message: "Category is required" });
+      if (!body.date) return send(400, { message: "Date is required" });
+      if (!body.periodId) return send(400, { message: "Period is required" });
+
+      const budgetsMap = getBudgets(user.id);
+      for (const b of budgetsMap.values()) {
+        if ((b.id === body.periodId || `${b.year}-${String(b.month).padStart(2, "0")}` === body.periodId) && b.status === "CLOSED") {
+          return send(400, { message: "Cannot add expenses to a closed budget period" });
+        }
+      }
+
+      const expense = {
+        id: "exp-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+        userId: user.id,
+        periodId: body.periodId,
+        title: body.title.trim(),
+        amount: Number(body.amount),
+        category: body.category,
+        date: body.date,
+        cardId: body.cardId || undefined,
+        templateId: body.templateId || undefined,
+        paymentDueDate: body.paymentDueDate || undefined,
+        isPaid: Boolean(body.isPaid),
+        split: body.split || undefined,
+        notes: body.notes ? body.notes.trim() : undefined,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      expensesMap.set(expense.id, expense);
+
+      // Auto-create linked split income if split provided
+      if (expense.split && expense.split.personId) {
+        let debtAmount = expense.amount;
+        if (expense.split.splitType === "PERCENTAGE") {
+          debtAmount = Math.round((expense.amount * (Number(expense.split.splitValue) / 100)) * 100) / 100;
+        } else {
+          debtAmount = Math.min(expense.amount, Number(expense.split.splitValue));
+        }
+        const splitIncome = {
+          id: "inc-split-" + expense.id,
+          userId: user.id,
+          periodId: expense.periodId,
+          title: "Cobro: " + expense.title,
+          amount: debtAmount,
+          date: expense.date,
+          source: "DEBT_COLLECTION",
+          isReceived: false,
+          dueDate: expense.paymentDueDate || expense.date,
+          debtorPersonId: expense.split.personId,
+          linkedExpenseId: expense.id,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        incomesMap.set(splitIncome.id, splitIncome);
+      }
+
+      return send(201, expense);
+    }
+  }
+
+  // Expenses single item
+  const expenseMatch = pathname.match(/^\/api\/expenses\/([^/]+)$/);
+  if (expenseMatch) {
+    const expId = expenseMatch[1];
+    const expensesMap = getExpenses(user.id);
+    const incomesMap = getIncomes(user.id);
+    const expense = expensesMap.get(expId);
+    if (!expense) return send(404, { message: "Expense not found" });
+
+    if (request.method === "GET") return send(200, expense);
+    if (request.method === "PATCH") {
+      if (body.title) expense.title = body.title.trim();
+      if (body.amount !== undefined) expense.amount = Number(body.amount);
+      if (body.category) expense.category = body.category;
+      if (body.date) expense.date = body.date;
+      if (body.cardId !== undefined) expense.cardId = body.cardId || undefined;
+      if (body.paymentDueDate !== undefined) expense.paymentDueDate = body.paymentDueDate || undefined;
+      if (body.isPaid !== undefined) expense.isPaid = Boolean(body.isPaid);
+      if (body.notes !== undefined) expense.notes = body.notes ? body.notes.trim() : undefined;
+
+      if (body.split !== undefined) {
+        if (body.split && body.split.personId) {
+          expense.split = body.split;
+          let debtAmount = expense.amount;
+          if (expense.split.splitType === "PERCENTAGE") {
+            debtAmount = Math.round((expense.amount * (Number(expense.split.splitValue) / 100)) * 100) / 100;
+          } else {
+            debtAmount = Math.min(expense.amount, Number(expense.split.splitValue));
+          }
+          const existingSplitIncome = incomesMap.get("inc-split-" + expense.id);
+          if (existingSplitIncome) {
+            existingSplitIncome.amount = debtAmount;
+            existingSplitIncome.debtorPersonId = expense.split.personId;
+            existingSplitIncome.title = "Cobro: " + expense.title;
+            existingSplitIncome.updatedAt = new Date().toISOString();
+          } else {
+            const splitIncome = {
+              id: "inc-split-" + expense.id,
+              userId: user.id,
+              periodId: expense.periodId,
+              title: "Cobro: " + expense.title,
+              amount: debtAmount,
+              date: expense.date,
+              source: "DEBT_COLLECTION",
+              isReceived: false,
+              dueDate: expense.paymentDueDate || expense.date,
+              debtorPersonId: expense.split.personId,
+              linkedExpenseId: expense.id,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            };
+            incomesMap.set(splitIncome.id, splitIncome);
+          }
+        } else {
+          expense.split = undefined;
+          const existingSplitIncome = incomesMap.get("inc-split-" + expense.id);
+          if (existingSplitIncome && !existingSplitIncome.isReceived) {
+            incomesMap.delete("inc-split-" + expense.id);
+          }
+        }
+      }
+
+      expense.updatedAt = new Date().toISOString();
+      return send(200, expense);
+    }
+    if (request.method === "DELETE") {
+      const linkedIncome = incomesMap.get("inc-split-" + expense.id);
+      if (linkedIncome && !linkedIncome.isReceived) {
+        incomesMap.delete("inc-split-" + expense.id);
+      }
+      expensesMap.delete(expId);
+      return send(200, { success: true });
+    }
   }
 
   return send(404, {});

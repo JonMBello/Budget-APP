@@ -52,6 +52,15 @@ Pruebas: Contratos de validación para compromisos fijos y planes MSI con redond
 
 Resultado de verificación: `npm test` pasó con 143 pruebas unitarias y de componentes. `npm run test:coverage` pasó con 83.52% de cobertura en líneas. `npm run test:e2e` pasó con 28 pruebas E2E contra el build de producción standalone. Lint, tipos y build standalone correctos.
 
-## 07–09 · Pendientes
+## 07 · Ingresos, gastos y división de compras — base verificada
+
+Implementado: Gestión completa de movimientos de egreso (`/app/expenses`) e ingreso (`/app/incomes`) en secciones separadas con categorización (11 categorías de gasto y 5 fuentes de ingreso), contratos Zod (`expenseCategorySchema`, `incomeSourceSchema`, `transactionSplitSchema`, `expenseSchema`, `createExpenseSchema`, `updateExpenseSchema`, `incomeSchema`, `createIncomeSchema`, `updateIncomeSchema`, `copyIncomesSchema` y función `calculateSplitBreakdown` con cálculo exacto de centavos), endpoints BFF en `/app/bff/expenses`, `/app/bff/expenses/[id]`, `/app/bff/incomes`, `/app/bff/incomes/[id]` y `/app/bff/incomes/copy-from-previous-month`, tarjetas de transacción (`ExpenseCard`, `IncomeCard`) con badges, toggle interactivo de estado de pago al banco (`isPaid`) y cobro en cuenta (`isReceived`), formularios reactivos (`ExpenseForm`, `IncomeForm`) con simulación automática de fecha de corte/pago al vincular tarjeta de crédito (GAP-08), editor reutilizable de división (`SplitEditor`) con porcentajes o montos fijos que genera automáticamente ingresos de cobranza vinculados (`DEBT_COLLECTION`) hacia la persona deudora (GAP-09), modal de copia inteligente de ingresos desde el mes previo (`CopyIncomesModal`) omitiendo cobranzas de deudas y ajustando fechas según los días válidos del mes destino, vista de listado con filtros y métricas (`TransactionsList`), y bloqueo integral de mutaciones en periodos cerrados (`CLOSED`, GAP-07).
+
+Pruebas: Contratos de validación para gastos, ingresos y desglose decimal de splits, pruebas de componentes React (`SplitEditor`, `ExpenseCard`, `ExpenseForm`, `IncomeCard`, `IncomeForm`, `CopyIncomesModal`, `TransactionsList`), endpoints sintéticos de gastos e ingresos en `tests/fixtures/api-server.mjs`, y 7 nuevas pruebas E2E en Playwright cubriendo alta de gastos con validación de campos y proyección de ciclo bancario, toggle de pagado al banco y edición/eliminación, alta de gastos compartidos con generación automática y sincronización de cobranzas de deuda (`DEBT_COLLECTION`), alta y cobro de ingresos por fuente, copiado de ingresos del mes anterior excluyendo deudas y ajustando días del calendario destino de forma idempotente, bloqueo de altas y mutaciones en periodos cerrados, y renderizado en servidor de las páginas `/app/expenses` y `/app/incomes`.
+
+Resultado de verificación: `npm test` pasó con 168 pruebas unitarias y de componentes. `npm run test:coverage` pasó con 79% de cobertura total y 90%+ en lógica central. `npm run test:e2e` pasó con 35 pruebas E2E contra el build de producción standalone. Lint, tipos y build standalone correctos sin errores ni advertencias.
+
+## 08–09 · Pendientes
 
 Se implementarán incrementalmente según docs/roadmap.md. Los GAP de API deben revalidarse antes de integrar el flujo afectado. No se sustituyen automatismos financieros faltantes por éxito simulado.
+
