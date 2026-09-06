@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionStore } from "@/lib/server/session-store";
-const publicPaths = new Set(["/login", "/register", "/health"]);
+const publicPaths = new Set([
+  "/login",
+  "/register",
+  "/health",
+  "/sw.js",
+  "/manifest.webmanifest",
+  "/icon.svg",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/apple-icon.png",
+]);
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const relative = path.startsWith("/app/") ? path.slice(4) : path === "/app" ? "/" : path;

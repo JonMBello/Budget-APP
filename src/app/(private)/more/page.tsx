@@ -17,6 +17,9 @@ export default function MorePage() {
         <Link className="button secondary" href="/people">
           Directorio de personas
         </Link>
+        <Link className="button secondary" href="/settings/notifications">
+          PWA y notificaciones
+        </Link>
         <Link className="button secondary" href="/settings/profile">
           Perfil y sesión
         </Link>

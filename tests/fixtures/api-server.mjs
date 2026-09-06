@@ -51,6 +51,12 @@ function getExpenses(userId) {
   return userExpenses.get(userId);
 }
 
+const userPushSubscriptions = new Map();
+function getPushSubscriptions(userId) {
+  if (!userPushSubscriptions.has(userId)) userPushSubscriptions.set(userId, new Map());
+  return userPushSubscriptions.get(userId);
+}
+
 function getBudgets(userId) {
   if (!userBudgets.has(userId)) {
     const map = new Map();
@@ -976,6 +982,74 @@ function computePeriodSummary(period, user) {
       expensesMap.delete(expId);
       return send(200, { success: true });
     }
+  }
+
+  // Web Push public key
+  if (pathname === "/api/notifications/web-push/public-key" && request.method === "GET") {
+    return send(200, {
+      publicKey: "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-Skv6_synthetic_vapid_public_key_for_testing",
+    });
+  }
+
+  // Web Push subscribe
+  if (pathname === "/api/notifications/web-push/subscribe" && request.method === "POST") {
+    if (!body.endpoint || !body.keys || !body.keys.p256dh || !body.keys.auth) {
+      return send(400, { message: "endpoint and keys (p256dh, auth) required" });
+    }
+    const subsMap = getPushSubscriptions(user.id);
+    const sub = {
+      endpoint: body.endpoint,
+      keys: {
+        p256dh: body.keys.p256dh,
+        auth: body.keys.auth,
+      },
+      userAgent: body.userAgent,
+      createdAt: new Date().toISOString(),
+    };
+    subsMap.set(body.endpoint, sub);
+    return send(201, { success: true, message: "Suscripción registrada" });
+  }
+
+  // Web Push unsubscribe
+  if (pathname === "/api/notifications/web-push/unsubscribe" && request.method === "DELETE") {
+    const endpoint = body.endpoint;
+    if (!endpoint) return send(400, { message: "endpoint required" });
+    const subsMap = getPushSubscriptions(user.id);
+    subsMap.delete(endpoint);
+    return send(200, { success: true, message: "Suscripción eliminada" });
+  }
+
+  // Notification test
+  if (pathname === "/api/notifications/test" && request.method === "POST") {
+    const channel = body.channel || "ALL";
+    const subsMap = getPushSubscriptions(user.id);
+    const pushCount = subsMap.size;
+    return send(200, {
+      success: true,
+      channel,
+      pushResult: {
+        sent: channel === "EMAIL" ? false : true,
+        recipientCount: pushCount,
+      },
+      emailResult: {
+        sent: channel === "WEB_PUSH" ? false : true,
+        recipientEmail: user.email,
+      },
+    });
+  }
+
+  // Trigger reminders
+  if (pathname === "/api/notifications/trigger-reminders" && request.method === "POST") {
+    const expensesMap = getExpenses(user.id);
+    const incomesMap = getIncomes(user.id);
+    const pendingExpenses = Array.from(expensesMap.values()).filter((e) => !e.isPaid);
+    const pendingIncomes = Array.from(incomesMap.values()).filter((i) => !i.isReceived);
+    const count = pendingExpenses.length + pendingIncomes.length;
+    return send(200, {
+      success: true,
+      remindersProcessed: count,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   return send(404, {});
