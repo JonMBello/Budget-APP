@@ -36,6 +36,14 @@ Pruebas: Contratos de validación de personas y desglose de deudas, pruebas de c
 
 Resultado de verificación: `npm test` pasó con 99 pruebas unitarias y de componentes. `npm run test:coverage` pasó con 90% de cobertura en líneas. `npm run test:e2e` pasó con 16 pruebas E2E contra el build de producción standalone. Lint, tipos y build standalone correctos.
 
-## 05–09 · Pendientes
+## 05 · Periodos mensuales, historial y ahorro — base verificada
+
+Implementado: Gestión integral de periodos presupuestarios en URL (`?period=YYYY-MM`), contratos Zod (`budgetPeriodSchema`, `initializeBudgetSchema`, `updateSavingsSchema`, `updateStatusSchema`, `budgetSummarySchema`), endpoints BFF en `/app/bff/budgets`, `/app/bff/budgets/current`, `/app/bff/budgets/initialize`, `/app/bff/budgets/[year]/[month]`, `/app/bff/budgets/[year]/[month]/savings`, `/app/bff/budgets/[year]/[month]/status` y `/app/bff/budgets/[year]/[month]/summary`, asistente de inicialización (`InitializeMonthWizard`) con cálculo previo de remanente/déficit y absorción transparente de conflictos 409 para reutilizar periodos existentes, selector accesible de meses (`PeriodSelector`), control de cierre y reapertura con confirmación modal (`PeriodStatusControl`), banner de modo solo lectura para periodos cerrados (`PeriodClosedBanner`), editor de ahorro acarreado con notas (`CarriedSavingsEditor`), dashboard principal conectado (`BudgetDashboard` en `/app`), vista de historial y comparador analítico de meses con barras relativas (`/app/budgets`), y acceso directo en `/app/more`.
+
+Pruebas: Contratos de validación de periodos y transiciones de fin de año, pruebas de componentes React (`PeriodSelector`, `InitializeMonthWizard`, `PeriodStatusControl`, `CarriedSavingsEditor`, `BudgetHistoryView`, `BudgetDashboard`), endpoints sintéticos de presupuestos en `tests/fixtures/api-server.mjs`, y 6 nuevas pruebas E2E en Playwright cubriendo rechazo de meses inválidos y creación válida, recuperación transparente ante 409, ajuste de ahorro con déficit negativo y notas, transición de año (2026-12 a 2027-01), cierre/reapertura con bloqueo de mutaciones en modo cerrado, y consulta de historial cronológico inverso y resúmenes calculados.
+
+Resultado de verificación: `npm test` pasó con 121 pruebas unitarias y de componentes. `npm run test:coverage` pasó con 87.25% de cobertura en líneas. `npm run test:e2e` pasó con 22 pruebas E2E contra el build de producción standalone. Lint, tipos y build standalone correctos.
+
+## 06–09 · Pendientes
 
 Se implementarán incrementalmente según docs/roadmap.md. Los GAP de API deben revalidarse antes de integrar el flujo afectado. No se sustituyen automatismos financieros faltantes por éxito simulado.

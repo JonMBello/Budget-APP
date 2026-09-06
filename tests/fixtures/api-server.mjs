@@ -6,11 +6,15 @@ const tokens = new Map();
 const profiles = new Map();
 const userCards = new Map();
 const userPeople = new Map();
+const userBudgets = new Map();
 
 function profile(email) {
   if (!profiles.has(email)) {
     profiles.set(email, {
-      id: email === "hasdata@example.test" ? "222222222222222222222222" : "111111111111111111111111",
+      id:
+        email === "hasdata@example.test"
+          ? "222222222222222222222222"
+          : `user-${email}`,
       email,
       name: "Usuario de prueba",
       currency: "MXN",
@@ -27,6 +31,29 @@ function getCards(userId) {
 function getPeople(userId) {
   if (!userPeople.has(userId)) userPeople.set(userId, new Map());
   return userPeople.get(userId);
+}
+
+function getBudgets(userId) {
+  if (!userBudgets.has(userId)) {
+    const map = new Map();
+    if (userId === "222222222222222222222222") {
+      map.set("2026-09", {
+        id: "fixture-period",
+        userId,
+        year: 2026,
+        month: 9,
+        status: "OPEN",
+        carriedSavings: 0,
+        totalIncome: 10000,
+        totalExpenses: 5000,
+        notes: "Fixture period",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+    }
+    userBudgets.set(userId, map);
+  }
+  return userBudgets.get(userId);
 }
 
 function calculateCycle(card, dateStr) {
@@ -256,8 +283,166 @@ const server = createServer(async (request, response) => {
     return send(200, { success: true, settledExpenseId: body.expenseId });
   }
 
-  if (["/api/incomes", "/api/expenses", "/api/recurring", "/api/budgets"].some((p) => pathname.startsWith(p))) {
-    return send(200, user.email === "hasdata@example.test" && pathname === "/api/budgets" ? [{ id: "fixture-period" }] : []);
+  // Budget endpoints
+  if (pathname === "/api/budgets") {
+    const budgetsMap = getBudgets(user.id);
+    if (request.method === "GET") {
+      const list = Array.from(budgetsMap.values()).sort(
+        (a, b) => b.year * 100 + b.month - (a.year * 100 + a.month),
+      );
+      return send(200, list);
+    }
+  }
+
+  if (pathname === "/api/budgets/current") {
+    const budgetsMap = getBudgets(user.id);
+    const sorted = Array.from(budgetsMap.values()).sort(
+      (a, b) => b.year * 100 + b.month - (a.year * 100 + a.month),
+    );
+    if (sorted.length === 0) return send(404, { message: "No active budget found" });
+    return send(200, sorted[0]);
+  }
+
+  if (pathname === "/api/budgets/current/summary") {
+    const budgetsMap = getBudgets(user.id);
+    const sorted = Array.from(budgetsMap.values()).sort(
+      (a, b) => b.year * 100 + b.month - (a.year * 100 + a.month),
+    );
+    if (sorted.length === 0) return send(404, { message: "No active budget found" });
+    const period = sorted[0];
+    const netBalance = period.totalIncome - period.totalExpenses;
+    const projectedSavings = period.carriedSavings + netBalance;
+    return send(200, {
+      periodId: period.id,
+      year: period.year,
+      month: period.month,
+      status: period.status,
+      totalIncome: period.totalIncome,
+      totalExpenses: period.totalExpenses,
+      netBalance,
+      carriedSavings: period.carriedSavings,
+      projectedSavings,
+      cashInPocketBalance: netBalance,
+    });
+  }
+
+  if (pathname === "/api/budgets/initialize" && request.method === "POST") {
+    const budgetsMap = getBudgets(user.id);
+    const year = Number(body.year);
+    const month = Number(body.month);
+    if (!year || !month || month < 1 || month > 12) {
+      return send(400, { message: "Valid year and month (1-12) required" });
+    }
+    const key = `${year}-${String(month).padStart(2, "0")}`;
+    if (budgetsMap.has(key)) {
+      return send(409, {
+        message: "Budget period already exists",
+        period: budgetsMap.get(key),
+      });
+    }
+
+    const period = {
+      id: `budget-${randomUUID().slice(0, 8)}`,
+      userId: user.id,
+      year,
+      month,
+      status: "OPEN",
+      carriedSavings: Number(body.carriedSavings || 0),
+      totalIncome: Number(body.totalIncome || 0),
+      totalExpenses: Number(body.totalExpenses || 0),
+      notes: body.notes ? body.notes.trim() : undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    budgetsMap.set(key, period);
+    return send(201, period);
+  }
+
+  const budgetSummaryMatch = pathname.match(/^\/api\/budgets\/(\d{4})\/(\d{1,2})\/summary$/);
+  if (budgetSummaryMatch && request.method === "GET") {
+    const year = Number(budgetSummaryMatch[1]);
+    const month = Number(budgetSummaryMatch[2]);
+    const key = `${year}-${String(month).padStart(2, "0")}`;
+    const budgetsMap = getBudgets(user.id);
+    const period = budgetsMap.get(key);
+    if (!period) return send(404, { message: "Budget period not found" });
+
+    const netBalance = period.totalIncome - period.totalExpenses;
+    const projectedSavings = period.carriedSavings + netBalance;
+    return send(200, {
+      periodId: period.id,
+      year: period.year,
+      month: period.month,
+      status: period.status,
+      totalIncome: period.totalIncome,
+      totalExpenses: period.totalExpenses,
+      netBalance,
+      carriedSavings: period.carriedSavings,
+      projectedSavings,
+      cashInPocketBalance: netBalance,
+    });
+  }
+
+  const budgetSavingsMatch = pathname.match(/^\/api\/budgets\/(\d{4})\/(\d{1,2})\/savings$/);
+  if (budgetSavingsMatch && request.method === "PATCH") {
+    const year = Number(budgetSavingsMatch[1]);
+    const month = Number(budgetSavingsMatch[2]);
+    const key = `${year}-${String(month).padStart(2, "0")}`;
+    const budgetsMap = getBudgets(user.id);
+    const period = budgetsMap.get(key);
+    if (!period) return send(404, { message: "Budget period not found" });
+    if (period.status === "CLOSED") {
+      return send(400, { message: "Cannot modify a closed budget period" });
+    }
+    if (body.carriedSavings !== undefined) {
+      period.carriedSavings = Number(body.carriedSavings);
+    }
+    if (body.notes !== undefined) {
+      period.notes = body.notes ? body.notes.trim() : undefined;
+    }
+    period.updatedAt = new Date().toISOString();
+    return send(200, period);
+  }
+
+  const budgetStatusMatch = pathname.match(/^\/api\/budgets\/(\d{4})\/(\d{1,2})\/status$/);
+  if (budgetStatusMatch && request.method === "PATCH") {
+    const year = Number(budgetStatusMatch[1]);
+    const month = Number(budgetStatusMatch[2]);
+    const key = `${year}-${String(month).padStart(2, "0")}`;
+    const budgetsMap = getBudgets(user.id);
+    const period = budgetsMap.get(key);
+    if (!period) return send(404, { message: "Budget period not found" });
+    if (body.status !== "OPEN" && body.status !== "CLOSED") {
+      return send(400, { message: "Status must be OPEN or CLOSED" });
+    }
+    period.status = body.status;
+    period.updatedAt = new Date().toISOString();
+    return send(200, period);
+  }
+
+  const budgetMatch = pathname.match(/^\/api\/budgets\/(\d{4})\/(\d{1,2})$/);
+  if (budgetMatch) {
+    const year = Number(budgetMatch[1]);
+    const month = Number(budgetMatch[2]);
+    const key = `${year}-${String(month).padStart(2, "0")}`;
+    const budgetsMap = getBudgets(user.id);
+    const period = budgetsMap.get(key);
+    if (!period) return send(404, { message: "Budget period not found" });
+
+    if (request.method === "GET") return send(200, period);
+    if (request.method === "PATCH") {
+      if (period.status === "CLOSED") {
+        return send(400, { message: "Cannot modify a closed budget period" });
+      }
+      if (body.carriedSavings !== undefined) period.carriedSavings = Number(body.carriedSavings);
+      if (body.notes !== undefined) period.notes = body.notes ? body.notes.trim() : undefined;
+      period.updatedAt = new Date().toISOString();
+      return send(200, period);
+    }
+  }
+
+  if (["/api/incomes", "/api/expenses", "/api/recurring"].some((p) => pathname.startsWith(p))) {
+    return send(200, []);
   }
 
   return send(404, {});
