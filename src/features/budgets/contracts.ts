@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  payrollSurplusSchema,
+  receivablesSummarySchema,
+} from "@/features/metrics/contracts";
 
 export const budgetStatusSchema = z.enum(["OPEN", "CLOSED"]);
 export type BudgetStatus = z.infer<typeof budgetStatusSchema>;
@@ -56,6 +60,8 @@ export const budgetSummarySchema = z.object({
   totalPaidExpenses: z.number().finite().optional(),
   pendingDebtAmount: z.number().finite().optional(),
   hasPendingTransactions: z.boolean().optional(),
+  payrollSurplus: payrollSurplusSchema.optional(),
+  receivables: receivablesSummarySchema.optional(),
 });
 export type BudgetSummary = z.infer<typeof budgetSummarySchema>;
 

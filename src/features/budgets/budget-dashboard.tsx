@@ -1,29 +1,135 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { EmptyState, Money } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
+import { clientRequest } from "@/lib/client";
 import { formatMonth, periodHref } from "@/lib/format";
+import type { Card } from "@/features/cards/contracts";
+import { CashflowAgenda } from "@/features/metrics/cashflow-agenda";
+import { CashflowBalanceCards } from "@/features/metrics/cashflow-balance-cards";
+import {
+  buildCashflowAgenda,
+  calculatePayrollSurplus,
+  calculateReceivables,
+} from "@/features/metrics/contracts";
+import { PayrollSurplusWidget } from "@/features/metrics/payroll-surplus-widget";
+import { useReactiveSummary } from "@/features/metrics/use-reactive-summary";
+import type { Person } from "@/features/people/contracts";
+import type { Expense, Income } from "@/features/transactions/contracts";
 import { CarriedSavingsEditor } from "./carried-savings-editor";
+import {
+  toPeriodKey,
+  type BudgetPeriod,
+  type BudgetStatus,
+  type BudgetSummary,
+} from "./contracts";
 import { InitializeMonthWizard } from "./initialize-month-wizard";
 import { PeriodClosedBanner } from "./period-closed-banner";
 import { PeriodSelector } from "./period-selector";
 import { PeriodStatusBadge } from "./period-status-badge";
 import { PeriodStatusControl } from "./period-status-control";
-import { toPeriodKey, type BudgetPeriod, type BudgetStatus } from "./contracts";
 
 export function BudgetDashboard({
   userName,
   initialPeriod,
   allPeriods,
+  initialSummary = null,
+  initialExpenses = [],
+  initialIncomes = [],
+  initialCards = [],
+  initialPeople = [],
 }: {
   userName: string;
   initialPeriod: BudgetPeriod | null;
   allPeriods: BudgetPeriod[];
+  initialSummary?: BudgetSummary | null;
+  initialExpenses?: Expense[];
+  initialIncomes?: Income[];
+  initialCards?: Card[];
+  initialPeople?: Person[];
 }) {
   const [period, setPeriod] = useState<BudgetPeriod | null>(initialPeriod);
   const [periods, setPeriods] = useState<BudgetPeriod[]>(allPeriods);
   const [showWizard, setShowWizard] = useState(false);
+
+  const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
+  const [incomes, setIncomes] = useState<Income[]>(initialIncomes);
+  const [cards, setCards] = useState<Card[]>(initialCards);
+  const [people, setPeople] = useState<Person[]>(initialPeople);
+
+  // Fallback summary when initialSummary is null
+  const fallbackSummary: BudgetSummary = useMemo(() => {
+    if (initialSummary) return initialSummary;
+    if (!period) {
+      return {
+        year: 2026,
+        month: 1,
+        status: "OPEN",
+        totalIncome: 0,
+        totalExpenses: 0,
+        netBalance: 0,
+        carriedSavings: 0,
+        projectedSavings: 0,
+        cashInPocketBalance: 0,
+      };
+    }
+    const net = period.totalIncome - period.totalExpenses;
+    return {
+      periodId: period.id,
+      year: period.year,
+      month: period.month,
+      status: period.status,
+      totalIncome: period.totalIncome,
+      totalExpenses: period.totalExpenses,
+      netBalance: period.carriedSavings + net,
+      carriedSavings: period.carriedSavings,
+      projectedSavings: period.carriedSavings + net,
+      cashInPocketBalance: period.carriedSavings + net,
+      totalExpectedIncome: period.totalIncome,
+      totalReceivedIncome: period.totalIncome,
+      totalCommittedExpenses: period.totalExpenses,
+      totalPaidExpenses: period.totalExpenses,
+      hasPendingTransactions: false,
+    };
+  }, [initialSummary, period]);
+
+  const { summary, isUpdating, staleNotice, notifyMutation } = useReactiveSummary({
+    year: period?.year ?? 2026,
+    month: period?.month ?? 1,
+    initialSummary: fallbackSummary,
+  });
+
+  // Re-fetch transactions, cards, people when period changes
+  useEffect(() => {
+    if (!period) return;
+    let cancelled = false;
+
+    async function loadPeriodData() {
+      try {
+        const [expData, incData, cardData, peopleData] = await Promise.all([
+          clientRequest<Expense[]>(`/expenses?periodId=${period!.id}`).catch(() => []),
+          clientRequest<Income[]>(`/incomes?periodId=${period!.id}`).catch(() => []),
+          clientRequest<Card[]>("/cards").catch(() => []),
+          clientRequest<Person[]>("/people").catch(() => []),
+        ]);
+
+        if (!cancelled) {
+          setExpenses(expData);
+          setIncomes(incData);
+          if (cardData.length > 0) setCards(cardData);
+          if (peopleData.length > 0) setPeople(peopleData);
+        }
+      } catch {
+        // Silently retain current data
+      }
+    }
+
+    loadPeriodData();
+    return () => {
+      cancelled = true;
+    };
+  }, [period]);
 
   if (!period) {
     return (
@@ -61,7 +167,6 @@ export function BudgetDashboard({
   }
 
   const periodKey = toPeriodKey(period.year, period.month);
-  const net = period.totalIncome - period.totalExpenses;
   const isClosed = period.status === "CLOSED";
 
   function handleStatusChange(newStatus: BudgetStatus) {
@@ -71,6 +176,7 @@ export function BudgetDashboard({
     setPeriods((prev) =>
       prev.map((p) => (toPeriodKey(p.year, p.month) === periodKey ? updated : p)),
     );
+    notifyMutation();
   }
 
   function handleSavingsSaved(updated: BudgetPeriod) {
@@ -78,12 +184,55 @@ export function BudgetDashboard({
     setPeriods((prev) =>
       prev.map((p) => (toPeriodKey(p.year, p.month) === periodKey ? updated : p)),
     );
+    notifyMutation();
   }
 
   function handlePeriodCreated(newPeriod: BudgetPeriod) {
     setPeriod(newPeriod);
     setPeriods((prev) => [newPeriod, ...prev]);
+    notifyMutation();
   }
+
+  // Toggle paid action for expense in agenda
+  async function handleTogglePaidExpense(expenseId: string) {
+    const expense = expenses.find((e) => e.id === expenseId);
+    if (!expense || isClosed) return;
+    try {
+      const updated = await clientRequest<Expense>(`/expenses/${expenseId}`, {
+        method: "PATCH",
+        body: { isPaid: !expense.isPaid },
+      });
+      setExpenses((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+      notifyMutation();
+    } catch {
+      // Error handled by clientRequest toast / exception
+    }
+  }
+
+  // Toggle received action for income in agenda
+  async function handleToggleReceivedIncome(incomeId: string) {
+    const income = incomes.find((i) => i.id === incomeId);
+    if (!income || isClosed) return;
+    try {
+      const updated = await clientRequest<Income>(`/incomes/${incomeId}`, {
+        method: "PATCH",
+        body: { isReceived: !income.isReceived },
+      });
+      setIncomes((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+      notifyMutation();
+    } catch {
+      // Error handled by clientRequest
+    }
+  }
+
+  // Calculate or use backend metrics
+  const payrollSurplus =
+    summary.payrollSurplus ?? calculatePayrollSurplus(incomes, expenses);
+
+  const receivables =
+    summary.receivables ?? calculateReceivables(incomes, people);
+
+  const agenda = buildCashflowAgenda(expenses, incomes, people, cards);
 
   return (
     <div className="page-container">
@@ -95,6 +244,11 @@ export function BudgetDashboard({
           <div className="period-title-group">
             <h1 style={{ margin: 0 }}>{formatMonth(periodKey)}</h1>
             <PeriodStatusBadge status={period.status} />
+            {isUpdating && (
+              <span className="updating-pill" data-testid="updating-indicator">
+                Actualizando…
+              </span>
+            )}
           </div>
         </div>
 
@@ -113,41 +267,49 @@ export function BudgetDashboard({
 
       {isClosed && <PeriodClosedBanner />}
 
-      <div className="period-metrics">
-        <div className="metric-card">
-          <p className="label">Ingresos registrados</p>
-          <p className="amount green">
-            <Money amount={period.totalIncome} />
-          </p>
+      {staleNotice && (
+        <div className="stale-alert" role="alert" data-testid="stale-notice">
+          ⚠️ {staleNotice}
         </div>
+      )}
 
-        <div className="metric-card">
-          <p className="label">Gastos registrados</p>
-          <p className="amount">
-            <Money amount={period.totalExpenses} />
-          </p>
+      {/* Balance Proyectado & Efectivo según registros + Ahorro Acarreado */}
+      <section className="dashboard-section" aria-label="Métricas de balance">
+        <CashflowBalanceCards summary={summary} />
+        <div style={{ marginTop: "16px" }}>
+          <CarriedSavingsEditor
+            period={{ ...period, carriedSavings: summary.carriedSavings }}
+            onSaved={handleSavingsSaved}
+            disabled={isClosed}
+          />
         </div>
+      </section>
 
-        <div className="metric-card">
-          <p className="label">Balance neto</p>
-          <p className={`amount ${net < 0 ? "negative" : "blue"}`}>
-            <Money amount={net} />
-          </p>
-        </div>
+      {/* Remanente de nómina */}
+      <section className="dashboard-section" aria-label="Remanente de nómina">
+        <PayrollSurplusWidget payrollSurplus={payrollSurplus} />
+      </section>
 
-        <CarriedSavingsEditor
-          period={period}
-          onSaved={handleSavingsSaved}
-          disabled={isClosed}
+      {/* Agenda de pagos y cobros */}
+      <section className="dashboard-section" aria-label="Agenda de flujo de caja">
+        <CashflowAgenda
+          agenda={agenda}
+          receivables={receivables}
+          cards={cards}
+          people={people}
+          onTogglePaidExpense={handleTogglePaidExpense}
+          onToggleReceivedIncome={handleToggleReceivedIncome}
+          isMutating={isClosed}
         />
-      </div>
+      </section>
 
+      {/* Navegación rápida */}
       <div
         style={{
           display: "flex",
           gap: "12px",
           flexWrap: "wrap",
-          marginTop: "32px",
+          marginTop: "36px",
         }}
       >
         <Link

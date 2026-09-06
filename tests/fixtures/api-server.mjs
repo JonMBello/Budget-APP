@@ -321,6 +321,109 @@ const server = createServer(async (request, response) => {
     return send(200, sorted[0]);
   }
 
+function computePeriodSummary(period, user) {
+  const key = `${period.year}-${String(period.month).padStart(2, "0")}`;
+  const userIncs = Array.from(getIncomes(user.id).values()).filter(
+    (i) => i.periodId === period.id || i.periodId === key || i.periodId === `p-${key}`
+  );
+  const userExps = Array.from(getExpenses(user.id).values()).filter(
+    (e) => e.periodId === period.id || e.periodId === key || e.periodId === `p-${key}`
+  );
+  const userPeopleMap = getPeople(user.id);
+
+  const totalIncome = userIncs.length > 0 ? userIncs.reduce((sum, i) => sum + i.amount, 0) : period.totalIncome;
+  const totalExpenses = userExps.length > 0 ? userExps.reduce((sum, e) => sum + e.amount, 0) : period.totalExpenses;
+  const totalReceivedIncome = userIncs.filter((i) => i.isReceived).reduce((sum, i) => sum + i.amount, 0);
+  const totalPaidExpenses = userExps.filter((e) => e.isPaid).reduce((sum, e) => sum + e.amount, 0);
+
+  const netBalance = period.carriedSavings + totalIncome - totalExpenses;
+  const projectedSavings = period.carriedSavings + totalIncome - totalExpenses;
+  const cashInPocketBalance =
+    period.carriedSavings +
+    (userIncs.length > 0 ? totalReceivedIncome : period.totalIncome) -
+    (userExps.length > 0 ? totalPaidExpenses : period.totalExpenses);
+
+  // Payroll surplus
+  const payrollIncomes = userIncs.filter((i) => i.source === "PAYROLL");
+  const totalPayrollIncome = payrollIncomes.reduce((sum, i) => sum + i.amount, 0);
+  const services = userExps.filter((e) => e.category === "SERVICE").reduce((sum, e) => sum + e.amount, 0);
+  const subscriptions = userExps.filter((e) => e.category === "SUBSCRIPTION").reduce((sum, e) => sum + e.amount, 0);
+  const msi = userExps.filter((e) => e.category === "MSI").reduce((sum, e) => sum + e.amount, 0);
+  const fixedCommitments = services + subscriptions + msi;
+  const initialDiscretionaryPayrollSurplus = totalPayrollIncome - fixedCommitments;
+  const regularExpenses = userExps.filter((e) => e.category === "REGULAR_EXPENSE").reduce((sum, e) => sum + e.amount, 0);
+  const remainingDiscretionaryPayrollSurplus = initialDiscretionaryPayrollSurplus - regularExpenses;
+
+  const payrollSurplus = {
+    totalPayrollIncome,
+    fixedCommitments,
+    services,
+    subscriptions,
+    msi,
+    initialDiscretionaryPayrollSurplus,
+    regularExpenses,
+    remainingDiscretionaryPayrollSurplus,
+  };
+
+  // Receivables
+  const pendingDebtIncomes = userIncs.filter(
+    (i) => !i.isReceived && (i.source === "DEBT_COLLECTION" || i.debtorPersonId)
+  );
+  const pendingDebtCollections = pendingDebtIncomes.reduce((sum, i) => sum + i.amount, 0);
+
+  const debtorsMap = new Map();
+  for (const inc of pendingDebtIncomes) {
+    const personId = inc.debtorPersonId || "unknown";
+    const personObj = userPeopleMap.get(personId);
+    const personName = personObj ? personObj.name : "Persona desconocida";
+    if (!debtorsMap.has(personId)) {
+      debtorsMap.set(personId, {
+        personId,
+        name: personName,
+        amount: 0,
+        earliestDueDate: inc.dueDate || inc.date || null,
+        pendingCount: 0,
+      });
+    }
+    const d = debtorsMap.get(personId);
+    d.amount += inc.amount;
+    d.pendingCount += 1;
+    const itemDate = inc.dueDate || inc.date;
+    if (itemDate && (!d.earliestDueDate || itemDate < d.earliestDueDate)) {
+      d.earliestDueDate = itemDate;
+    }
+  }
+
+  const receivables = {
+    pendingDebtCollections,
+    debtors: Array.from(debtorsMap.values()),
+  };
+
+  const hasPendingTransactions =
+    userExps.some((e) => !e.isPaid) || userIncs.some((i) => !i.isReceived);
+
+  return {
+    periodId: period.id,
+    year: period.year,
+    month: period.month,
+    status: period.status,
+    totalIncome,
+    totalExpenses,
+    totalExpectedIncome: totalIncome,
+    totalReceivedIncome,
+    totalCommittedExpenses: totalExpenses,
+    totalPaidExpenses,
+    netBalance,
+    carriedSavings: period.carriedSavings,
+    projectedSavings,
+    cashInPocketBalance,
+    pendingDebtAmount: pendingDebtCollections,
+    hasPendingTransactions,
+    payrollSurplus,
+    receivables,
+  };
+}
+
   if (pathname === "/api/budgets/current/summary") {
     const budgetsMap = getBudgets(user.id);
     const sorted = Array.from(budgetsMap.values()).sort(
@@ -328,34 +431,7 @@ const server = createServer(async (request, response) => {
     );
     if (sorted.length === 0) return send(404, { message: "No active budget found" });
     const period = sorted[0];
-    const key = `${period.year}-${String(period.month).padStart(2, "0")}`;
-    const userIncs = Array.from(getIncomes(user.id).values()).filter(
-      (i) => i.periodId === period.id || i.periodId === key || i.periodId === `p-${key}`
-    );
-    const userExps = Array.from(getExpenses(user.id).values()).filter(
-      (e) => e.periodId === period.id || e.periodId === key || e.periodId === `p-${key}`
-    );
-    const totalIncome = userIncs.length > 0 ? userIncs.reduce((sum, i) => sum + i.amount, 0) : period.totalIncome;
-    const totalExpenses = userExps.length > 0 ? userExps.reduce((sum, e) => sum + e.amount, 0) : period.totalExpenses;
-    const totalReceivedIncome = userIncs.filter((i) => i.isReceived).reduce((sum, i) => sum + i.amount, 0);
-    const totalPaidExpenses = userExps.filter((e) => e.isPaid).reduce((sum, e) => sum + e.amount, 0);
-
-    const netBalance = totalIncome - totalExpenses;
-    const projectedSavings = period.carriedSavings + netBalance;
-    const cashInPocketBalance = period.carriedSavings + (userIncs.length > 0 ? totalReceivedIncome : totalIncome) - (userExps.length > 0 ? totalPaidExpenses : totalExpenses);
-
-    return send(200, {
-      periodId: period.id,
-      year: period.year,
-      month: period.month,
-      status: period.status,
-      totalIncome,
-      totalExpenses,
-      netBalance,
-      carriedSavings: period.carriedSavings,
-      projectedSavings,
-      cashInPocketBalance,
-    });
+    return send(200, computePeriodSummary(period, user));
   }
 
   if (pathname === "/api/budgets/initialize" && request.method === "POST") {
@@ -399,33 +475,7 @@ const server = createServer(async (request, response) => {
     const period = budgetsMap.get(key);
     if (!period) return send(404, { message: "Budget period not found" });
 
-    const userIncs = Array.from(getIncomes(user.id).values()).filter(
-      (i) => i.periodId === period.id || i.periodId === key || i.periodId === `p-${key}`
-    );
-    const userExps = Array.from(getExpenses(user.id).values()).filter(
-      (e) => e.periodId === period.id || e.periodId === key || e.periodId === `p-${key}`
-    );
-    const totalIncome = userIncs.length > 0 ? userIncs.reduce((sum, i) => sum + i.amount, 0) : period.totalIncome;
-    const totalExpenses = userExps.length > 0 ? userExps.reduce((sum, e) => sum + e.amount, 0) : period.totalExpenses;
-    const totalReceivedIncome = userIncs.filter((i) => i.isReceived).reduce((sum, i) => sum + i.amount, 0);
-    const totalPaidExpenses = userExps.filter((e) => e.isPaid).reduce((sum, e) => sum + e.amount, 0);
-
-    const netBalance = totalIncome - totalExpenses;
-    const projectedSavings = period.carriedSavings + netBalance;
-    const cashInPocketBalance = period.carriedSavings + (userIncs.length > 0 ? totalReceivedIncome : totalIncome) - (userExps.length > 0 ? totalPaidExpenses : totalExpenses);
-
-    return send(200, {
-      periodId: period.id,
-      year: period.year,
-      month: period.month,
-      status: period.status,
-      totalIncome,
-      totalExpenses,
-      netBalance,
-      carriedSavings: period.carriedSavings,
-      projectedSavings,
-      cashInPocketBalance,
-    });
+    return send(200, computePeriodSummary(period, user));
   }
 
   const budgetSavingsMatch = pathname.match(/^\/api\/budgets\/(\d{4})\/(\d{1,2})\/savings$/);

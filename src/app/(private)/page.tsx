@@ -55,11 +55,77 @@ export default async function HomePage(props: {
     }
   }
 
+  let initialSummary = null;
+  let initialExpenses: import("@/features/transactions/contracts").Expense[] = [];
+  let initialIncomes: import("@/features/transactions/contracts").Income[] = [];
+  let initialCards: import("@/features/cards/contracts").Card[] = [];
+  let initialPeople: import("@/features/people/contracts").Person[] = [];
+
+  if (activePeriod) {
+    const period = activePeriod;
+    const [summaryRes, expensesRes, incomesRes, cardsRes, peopleRes] = await Promise.allSettled([
+      authenticatedRequest<unknown>(`/budgets/${period.year}/${period.month}/summary`),
+      authenticatedRequest<unknown[]>(`/expenses?periodId=${period.id}`),
+      authenticatedRequest<unknown[]>(`/incomes?periodId=${period.id}`),
+      authenticatedRequest<unknown[]>("/cards"),
+      authenticatedRequest<unknown[]>("/people"),
+    ]);
+
+    if (summaryRes.status === "fulfilled") {
+      try {
+        initialSummary = (await import("@/features/budgets/contracts")).budgetSummarySchema.parse(summaryRes.value);
+      } catch {
+        initialSummary = null;
+      }
+    }
+
+    if (expensesRes.status === "fulfilled") {
+      try {
+        const { expenseSchema } = await import("@/features/transactions/contracts");
+        initialExpenses = z.array(expenseSchema).parse(expensesRes.value);
+      } catch {
+        initialExpenses = [];
+      }
+    }
+
+    if (incomesRes.status === "fulfilled") {
+      try {
+        const { incomeSchema } = await import("@/features/transactions/contracts");
+        initialIncomes = z.array(incomeSchema).parse(incomesRes.value);
+      } catch {
+        initialIncomes = [];
+      }
+    }
+
+    if (cardsRes.status === "fulfilled") {
+      try {
+        const { cardSchema } = await import("@/features/cards/contracts");
+        initialCards = z.array(cardSchema).parse(cardsRes.value);
+      } catch {
+        initialCards = [];
+      }
+    }
+
+    if (peopleRes.status === "fulfilled") {
+      try {
+        const { personSchema } = await import("@/features/people/contracts");
+        initialPeople = z.array(personSchema).parse(peopleRes.value);
+      } catch {
+        initialPeople = [];
+      }
+    }
+  }
+
   return (
     <BudgetDashboard
       userName={user.name}
       initialPeriod={activePeriod}
       allPeriods={allPeriods}
+      initialSummary={initialSummary}
+      initialExpenses={initialExpenses}
+      initialIncomes={initialIncomes}
+      initialCards={initialCards}
+      initialPeople={initialPeople}
     />
   );
 }
