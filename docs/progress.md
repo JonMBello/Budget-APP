@@ -28,6 +28,14 @@ Pruebas: Contratos de validación de tarjetas y previsualización de estados de 
 
 Resultado de verificación: `npm test` pasó con 81 pruebas unitarias y de componentes. `npm run test:e2e` pasó con 12 pruebas E2E contra el build de producción standalone. Lint, tipos y build standalone correctos.
 
-## 04–09 · Pendientes
+## 04 · Personas y cuentas por cobrar — base verificada
+
+Implementado: Directorio de personas de confianza para préstamos y gastos compartidos (`/app/people`), contratos Zod para alta y actualización (`createPersonSchema`, `updatePersonSchema`, `personSchema`, `debtSummarySchema`, `settleDebtSchema`), endpoints BFF en `/app/bff/people`, `/app/bff/people/[id]`, `/app/bff/people/[id]/debts` y `/app/bff/people/[id]/settle`, vista de listado accesible con búsqueda en tiempo real por nombre/contacto, tabs de filtro activas/todas, modal y formulario de alta/edición, vista de detalle `/app/people/[id]` con resumen interactivo de deudas desglosado por MSI (con tarjeta y cuota), servicios recurrentes compartidos y gastos puntuales, acción de marcado y cobro de deudas puntuales (`settle`), y archivo lógico seguro (`DELETE`).
+
+Pruebas: Contratos de validación de personas y desglose de deudas, pruebas de componentes React (`PersonForm`, `PersonList`, `PersonDetail`, `DebtSummaryView`), soporte sintético para personas y deudas en `tests/fixtures/api-server.mjs`, y 4 nuevas pruebas E2E en Playwright cubriendo validación de longitud mínima de nombre (2 caracteres), alta con contacto y notas, consulta y cobro de compromisos pendientes, y archivo lógico verificado en listados activos e inactivos.
+
+Resultado de verificación: `npm test` pasó con 99 pruebas unitarias y de componentes. `npm run test:coverage` pasó con 90% de cobertura en líneas. `npm run test:e2e` pasó con 16 pruebas E2E contra el build de producción standalone. Lint, tipos y build standalone correctos.
+
+## 05–09 · Pendientes
 
 Se implementarán incrementalmente según docs/roadmap.md. Los GAP de API deben revalidarse antes de integrar el flujo afectado. No se sustituyen automatismos financieros faltantes por éxito simulado.

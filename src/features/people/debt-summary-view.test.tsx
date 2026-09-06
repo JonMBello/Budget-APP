@@ -1,0 +1,119 @@
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { DebtSummaryView } from "./debt-summary-view";
+import type { DebtSummary } from "./contracts";
+
+const debtsFixture: DebtSummary = {
+  totalDebt: 3200,
+  immediateDueAmount: 1200,
+  nextPaymentDueDate: "2026-10-05",
+  msiInstallments: [
+    {
+      title: "PlayStation 5",
+      currentInstallment: 3,
+      totalInstallments: 12,
+      amount: 1000,
+      paymentDueDate: "2026-10-05",
+      cardName: "BBVA Oro",
+    },
+  ],
+  recurringServices: [
+    {
+      title: "YouTube Premium",
+      amount: 200,
+      paymentDueDate: "2026-10-01",
+    },
+  ],
+  singleExpenses: [
+    {
+      expenseId: "exp-single-99",
+      title: "Cena en terraza",
+      amount: 800,
+      paymentDueDate: "2026-09-25",
+      settled: false,
+    },
+  ],
+};
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
+
+describe("DebtSummaryView", () => {
+  it("fetches and displays debt summary with breakdowns", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => debtsFixture,
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<DebtSummaryView personId="person-100" />);
+
+    expect(await screen.findByText("PlayStation 5")).toBeInTheDocument();
+    expect(screen.getByText("Cuota 3 de 12 · BBVA Oro · Vence: 5 oct 2026")).toBeInTheDocument();
+    expect(screen.getByText("YouTube Premium")).toBeInTheDocument();
+    expect(screen.getByText("Cena en terraza")).toBeInTheDocument();
+  });
+
+  it("handles settle action on single expense", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => debtsFixture,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ success: true }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ ...debtsFixture, singleExpenses: [] }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const user = userEvent.setup();
+    render(<DebtSummaryView personId="person-100" />);
+
+    const settleBtn = await screen.findByRole("button", { name: "Marcar cobrado" });
+    await user.click(settleBtn);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/app/bff/people/person-100/settle",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ expenseId: "exp-single-99" }),
+      }),
+    );
+    expect(await screen.findByText("Cobro registrado exitosamente.")).toBeInTheDocument();
+  });
+
+  it("displays empty state when there are no debts", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          totalDebt: 0,
+          immediateDueAmount: 0,
+          nextPaymentDueDate: null,
+          msiInstallments: [],
+          recurringServices: [],
+          singleExpenses: [],
+        }),
+      }),
+    );
+
+    render(<DebtSummaryView personId="person-100" />);
+
+    expect(
+      await screen.findByText("Esta persona no tiene deudas ni cobros pendientes registrados."),
+    ).toBeInTheDocument();
+  });
+});

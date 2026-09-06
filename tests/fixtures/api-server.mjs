@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 const tokens = new Map();
 const profiles = new Map();
 const userCards = new Map();
+const userPeople = new Map();
 
 function profile(email) {
   if (!profiles.has(email)) {
@@ -21,6 +22,11 @@ function profile(email) {
 function getCards(userId) {
   if (!userCards.has(userId)) userCards.set(userId, new Map());
   return userCards.get(userId);
+}
+
+function getPeople(userId) {
+  if (!userPeople.has(userId)) userPeople.set(userId, new Map());
+  return userPeople.get(userId);
 }
 
 function calculateCycle(card, dateStr) {
@@ -167,6 +173,87 @@ const server = createServer(async (request, response) => {
     const dateStr = parsedUrl.searchParams.get("date");
     const preview = calculateCycle(card, dateStr);
     return send(200, preview);
+  }
+
+  // People endpoints
+  if (pathname === "/api/people") {
+    const peopleMap = getPeople(user.id);
+    if (request.method === "GET") {
+      const includeInactive = parsedUrl.searchParams.get("includeInactive") === "true";
+      const list = Array.from(peopleMap.values()).filter((p) => includeInactive || p.isActive);
+      return send(200, list);
+    }
+    if (request.method === "POST") {
+      if (!body.name || body.name.trim().length < 2) {
+        return send(400, { message: "Name must be at least 2 characters" });
+      }
+      const person = {
+        id: `person-${randomUUID().slice(0, 8)}`,
+        userId: user.id,
+        name: body.name.trim(),
+        contact: body.contact ? body.contact.trim() : undefined,
+        notes: body.notes ? body.notes.trim() : undefined,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+      };
+      peopleMap.set(person.id, person);
+      return send(201, person);
+    }
+  }
+
+  const personMatch = pathname.match(/^\/api\/people\/([^/]+)$/);
+  if (personMatch) {
+    const personId = personMatch[1];
+    const peopleMap = getPeople(user.id);
+    const person = peopleMap.get(personId);
+    if (!person) return send(404, { message: "Person not found" });
+
+    if (request.method === "GET") return send(200, person);
+    if (request.method === "PATCH") {
+      if (body.name) person.name = body.name.trim();
+      if (body.contact !== undefined) person.contact = body.contact ? body.contact.trim() : undefined;
+      if (body.notes !== undefined) person.notes = body.notes ? body.notes.trim() : undefined;
+      return send(200, person);
+    }
+    if (request.method === "DELETE") {
+      person.isActive = false;
+      return send(200, person);
+    }
+  }
+
+  const debtsMatch = pathname.match(/^\/api\/people\/([^/]+)\/debts$/);
+  if (debtsMatch && request.method === "GET") {
+    const personId = debtsMatch[1];
+    const peopleMap = getPeople(user.id);
+    const person = peopleMap.get(personId);
+    if (!person) return send(404, { message: "Person not found" });
+
+    const hasDebt = person.name.includes("Deuda");
+    const debts = {
+      totalDebt: hasDebt ? 2500 : 0,
+      immediateDueAmount: hasDebt ? 1000 : 0,
+      nextPaymentDueDate: hasDebt ? "2026-10-05" : null,
+      msiInstallments: hasDebt
+        ? [{ title: "Laptop Trabajo", currentInstallment: 2, totalInstallments: 6, amount: 1500, paymentDueDate: "2026-10-05", cardName: "Banorte Oro" }]
+        : [],
+      recurringServices: hasDebt
+        ? [{ title: "Spotify Familiar", amount: 200, paymentDueDate: "2026-10-01" }]
+        : [],
+      singleExpenses: hasDebt
+        ? [{ expenseId: "exp-single-1", title: "Cena en restaurante", amount: 800, paymentDueDate: "2026-09-20", settled: false }]
+        : [],
+    };
+    return send(200, debts);
+  }
+
+  const settleMatch = pathname.match(/^\/api\/people\/([^/]+)\/settle$/);
+  if (settleMatch && request.method === "POST") {
+    const personId = settleMatch[1];
+    const peopleMap = getPeople(user.id);
+    const person = peopleMap.get(personId);
+    if (!person) return send(404, { message: "Person not found" });
+    if (!body.expenseId) return send(400, { message: "expenseId required" });
+    return send(200, { success: true, settledExpenseId: body.expenseId });
   }
 
   if (["/api/incomes", "/api/expenses", "/api/recurring", "/api/budgets"].some((p) => pathname.startsWith(p))) {
