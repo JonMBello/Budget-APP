@@ -332,7 +332,7 @@ export function BudgetHistoryView({
                         Ahorro proyectado
                       </span>
                       <strong className="green">
-                        <Money amount={summaryA.projectedSavings} />
+                        <Money amount={summaryA.netBalance} />
                       </strong>
                     </div>
                   </div>
@@ -404,7 +404,7 @@ export function BudgetHistoryView({
                         Ahorro proyectado
                       </span>
                       <strong className="green">
-                        <Money amount={summaryB.projectedSavings} />
+                        <Money amount={summaryB.netBalance} />
                       </strong>
                     </div>
                   </div>

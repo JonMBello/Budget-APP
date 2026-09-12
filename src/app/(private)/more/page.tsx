@@ -1,29 +1,12 @@
-import Link from "next/link";
-export default function MorePage() {
-  return (
-    <>
-      <p className="eyebrow">TU ESPACIO</p>
-      <h1>Más</h1>
-      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "24px" }}>
-        <Link className="button secondary" href="/budgets">
-          Historial de presupuestos
-        </Link>
-        <Link className="button secondary" href="/recurring">
-          Servicios, suscripciones y MSI
-        </Link>
-        <Link className="button secondary" href="/cards">
-          Tarjetas y cuentas
-        </Link>
-        <Link className="button secondary" href="/people">
-          Directorio de personas
-        </Link>
-        <Link className="button secondary" href="/settings/notifications">
-          PWA y notificaciones
-        </Link>
-        <Link className="button secondary" href="/settings/profile">
-          Perfil y sesión
-        </Link>
-      </div>
-    </>
-  );
+import { redirect } from "next/navigation";
+import { periodHref, validPeriod } from "@/lib/format";
+import { MORE_HOME } from "@/components/more-links";
+
+export default async function MorePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string }>;
+}) {
+  const query = await searchParams;
+  redirect(periodHref(MORE_HOME, validPeriod(query.period ?? null)));
 }

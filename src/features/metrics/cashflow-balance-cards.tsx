@@ -8,9 +8,7 @@ export function CashflowBalanceCards({
 }: {
   summary: BudgetSummary;
 }) {
-  const projectedSavings =
-    summary.projectedSavings ??
-    summary.carriedSavings + summary.totalIncome - summary.totalExpenses;
+  const projectedSavings = summary.netBalance;
 
   const totalExpectedIncome =
     summary.totalExpectedIncome ?? summary.totalIncome;
@@ -64,18 +62,6 @@ export function CashflowBalanceCards({
             <span className="breakdown-label">(-) Gastos comprometidos:</span>
             <span className="breakdown-value">
               <Money amount={totalCommittedExpenses} />
-            </span>
-          </div>
-          <div className="breakdown-row">
-            <span className="breakdown-label">Balance neto del periodo:</span>
-            <span
-              className={`breakdown-value ${
-                totalExpectedIncome - totalCommittedExpenses < 0
-                  ? "negative"
-                  : "blue"
-              }`}
-            >
-              <Money amount={totalExpectedIncome - totalCommittedExpenses} />
             </span>
           </div>
         </div>

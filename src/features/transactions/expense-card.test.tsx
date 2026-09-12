@@ -83,7 +83,7 @@ describe("ExpenseCard", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /estado:/i }));
+    await user.click(screen.getByRole("button", { name: "Marcar como pagado" }));
     expect(onTogglePaid).toHaveBeenCalledWith(mockExpense);
 
     await user.click(screen.getByRole("button", { name: "Editar" }));
@@ -104,7 +104,7 @@ describe("ExpenseCard", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: /estado:/i })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Marcar como pagado" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Editar" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /eliminar gasto/i })).not.toBeInTheDocument();
   });

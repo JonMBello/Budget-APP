@@ -5,6 +5,7 @@ import {
   type Income,
   type IncomeSource,
 } from "./contracts";
+import { TransactionCardActions } from "./transaction-actions";
 
 export const INCOME_SOURCE_LABELS: Record<
   IncomeSource,
@@ -60,25 +61,10 @@ export function IncomeCard({
             )}
           </div>
 
-          <button
-            type="button"
-            className={`status-pill ${isReceived ? "received" : "pending"}`}
-            disabled={isClosed || pendingAction || !onToggleReceived}
-            onClick={() => onToggleReceived?.(income)}
-            title={
-              isClosed
-                ? "El periodo está cerrado"
-                : isReceived
-                ? "Marcar como pendiente de cobro"
-                : "Marcar como cobrado / recibido"
-            }
-            aria-label={`Estado: ${
-              isReceived ? "Recibido / Cobrado" : "Pendiente de cobro"
-            }. Haz clic para cambiar.`}
-          >
-            <span className={`dot ${isReceived ? "green" : "blue"}`} />
-            {isReceived ? "Recibido" : "Pendiente"}
-          </button>
+          <span className={`transaction-state ${isReceived ? "complete" : "waiting"}`}>
+            <span aria-hidden="true">{isReceived ? "✓" : "◷"}</span>
+            {isReceived ? "Cobrado" : "Pendiente"}
+          </span>
         </div>
 
         <h3 className="transaction-title">{income.title}</h3>
@@ -138,37 +124,23 @@ export function IncomeCard({
           </div>
         )}
 
-        {!isClosed && (onEdit || onDelete) && (
-          <div className="transaction-actions">
-            {onEdit && (
-              <button
-                type="button"
-                className="button secondary"
-                style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.8125rem", flex: 1 }}
-                disabled={pendingAction}
-                onClick={() => onEdit(income)}
-              >
-                Editar
-              </button>
-            )}
-            {onDelete && (
-              <button
-                type="button"
-                className="button danger"
-                style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.8125rem" }}
-                disabled={pendingAction || (isLinked && isReceived)}
-                onClick={() => onDelete(income)}
-                title={
-                  isLinked && isReceived
-                    ? "No se puede eliminar un cobro de deuda ya recibido."
-                    : "Eliminar ingreso"
-                }
-                aria-label={`Eliminar ingreso ${income.title}`}
-              >
-                Eliminar
-              </button>
-            )}
-          </div>
+        {!isClosed && (
+          <TransactionCardActions
+            pendingAction={pendingAction}
+            statusComplete={isReceived}
+            markCompleteLabel="Marcar como cobrado"
+            markPendingLabel="Marcar como pendiente"
+            onToggleStatus={onToggleReceived ? () => onToggleReceived(income) : undefined}
+            onEdit={onEdit ? () => onEdit(income) : undefined}
+            onDelete={onDelete ? () => onDelete(income) : undefined}
+            deleteAriaLabel={`Eliminar ingreso ${income.title}`}
+            deleteDisabled={isLinked && isReceived}
+            deleteTitle={
+              isLinked && isReceived
+                ? "No se puede eliminar un cobro de deuda ya recibido."
+                : "Eliminar ingreso"
+            }
+          />
         )}
       </div>
     </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { InfoTooltip } from "@/components/info-tooltip";
+
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { EmptyState, Money } from "@/components/ui";
@@ -69,7 +71,7 @@ export function CashflowAgenda({
     <div className="agenda-container" data-testid="cashflow-agenda">
       <div className="agenda-header">
         <div>
-          <h2 className="agenda-title">Agenda de Flujo de Caja</h2>
+          <h2 className="agenda-title">Agenda de Flujo de Caja <InfoTooltip label="Agenda de Flujo de Caja">Esta agenda organiza tus registros para planificar tu flujo de caja; <strong>no representa saldo bancario disponible ni el pago mínimo requerido por tu banco</strong>.</InfoTooltip></h2>
           <p className="agenda-subtitle">
             Compromisos de pago y cobros pendientes del mes ordenados cronológicamente.
           </p>
@@ -252,9 +254,7 @@ export function CashflowAgenda({
         </div>
       )}
 
-      <p className="agenda-disclaimer">
-        ℹ️ Esta agenda organiza tus registros para planificar tu flujo de caja; <strong>no representa saldo bancario disponible ni el pago mínimo requerido por tu banco</strong>.
-      </p>
+
     </div>
   );
 }

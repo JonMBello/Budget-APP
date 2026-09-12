@@ -119,7 +119,13 @@ describe("TransactionsList", () => {
     expect(screen.queryByText("Internet Totalplay")).not.toBeInTheDocument();
     expect(screen.getByText("Cena Tacos")).toBeInTheDocument();
 
-    await user.clear(searchInput);
+    expect(screen.getByText("Mostrando 1 de 2 gastos")).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Categoría"), "SERVICE");
+    expect(screen.getByText("Mostrando 0 de 2 gastos")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Limpiar filtros" }));
+    expect(searchInput).toHaveValue("");
+    expect(screen.getByLabelText("Categoría")).toHaveValue("ALL");
+    expect(screen.getByText("Mostrando 2 de 2 gastos")).toBeInTheDocument();
 
     // Open create form
     const createBtn = screen.getByRole("button", { name: "+ Registrar gasto" });

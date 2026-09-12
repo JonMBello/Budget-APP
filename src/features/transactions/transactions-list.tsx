@@ -95,7 +95,7 @@ export function TransactionsList(props: TransactionsListProps) {
     if (!isExpenses) return [];
     return expenses.filter((e) => {
       if (search.trim()) {
-        const q = search.toLowerCase();
+        const q = search.trim().toLowerCase();
         const matchesTitle = e.title.toLowerCase().includes(q);
         const matchesNotes = e.notes ? e.notes.toLowerCase().includes(q) : false;
         if (!matchesTitle && !matchesNotes) return false;
@@ -112,7 +112,7 @@ export function TransactionsList(props: TransactionsListProps) {
     if (isExpenses) return [];
     return incomes.filter((inc) => {
       if (search.trim()) {
-        const q = search.toLowerCase();
+        const q = search.trim().toLowerCase();
         const matchesTitle = inc.title.toLowerCase().includes(q);
         const matchesNotes = inc.notes ? inc.notes.toLowerCase().includes(q) : false;
         if (!matchesTitle && !matchesNotes) return false;
@@ -300,51 +300,7 @@ export function TransactionsList(props: TransactionsListProps) {
 
       {/* Action buttons and filter bar */}
       <div className="actions-bar">
-        <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={`Buscar en ${isExpenses ? "gastos" : "ingresos"}…`}
-            style={{
-              minHeight: "42px",
-              padding: "8px 14px",
-              maxWidth: "240px",
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              borderRadius: "10px",
-              color: "var(--text)",
-            }}
-            aria-label={`Buscar ${isExpenses ? "gastos" : "ingresos"}`}
-          />
-
-          <div className="filter-tabs" style={{ margin: 0 }}>
-            <button
-              type="button"
-              className="filter-tab"
-              aria-pressed={statusFilter === "ALL"}
-              onClick={() => setStatusFilter("ALL")}
-            >
-              Todos
-            </button>
-            <button
-              type="button"
-              className="filter-tab"
-              aria-pressed={statusFilter === "DONE"}
-              onClick={() => setStatusFilter("DONE")}
-            >
-              {isExpenses ? "Pagados" : "Cobrados"}
-            </button>
-            <button
-              type="button"
-              className="filter-tab"
-              aria-pressed={statusFilter === "PENDING"}
-              onClick={() => setStatusFilter("PENDING")}
-            >
-              Pendientes
-            </button>
-          </div>
-        </div>
+        <h2 className="transactions-heading">Movimientos del mes</h2>
 
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
           {!isExpenses && previousPeriod && !isClosed && (
@@ -373,43 +329,65 @@ export function TransactionsList(props: TransactionsListProps) {
         </div>
       </div>
 
-      {/* Category / Source filter tabs */}
-      <div
-        className="filter-tabs"
-        style={{ overflowX: "auto", paddingBottom: "4px", marginTop: "16px" }}
-      >
-        <button
-          type="button"
-          className="filter-tab"
-          aria-pressed={categoryFilter === "ALL"}
-          onClick={() => setCategoryFilter("ALL")}
-        >
-          Todas las categorías
-        </button>
-        {isExpenses
-          ? Object.entries(EXPENSE_CATEGORY_LABELS).map(([catKey, meta]) => (
-              <button
-                key={catKey}
-                type="button"
-                className="filter-tab"
-                aria-pressed={categoryFilter === catKey}
-                onClick={() => setCategoryFilter(catKey)}
-              >
-                {meta.label}
-              </button>
-            ))
-          : Object.entries(INCOME_SOURCE_LABELS).map(([srcKey, meta]) => (
-              <button
-                key={srcKey}
-                type="button"
-                className="filter-tab"
-                aria-pressed={categoryFilter === srcKey}
-                onClick={() => setCategoryFilter(srcKey)}
-              >
-                {meta.label}
-              </button>
-            ))}
-      </div>
+      <section className="transaction-filters" aria-label="Filtros de movimientos">
+        <div className="transaction-filter-fields">
+          <label className="transaction-filter-field">
+            <span>Buscar</span>
+            <input type="search" value={search} onChange={(e) => setSearch(e.target.value)}
+              placeholder={`Buscar en ${isExpenses ? "gastos" : "ingresos"}…`}
+              aria-label={`Buscar ${isExpenses ? "gastos" : "ingresos"}`} />
+          </label>
+          <div className="transaction-filter-field">
+            <span>Estado</span>
+          <div className="transaction-status-options" role="group" aria-label="Estado">
+            <button
+              type="button"
+              className="filter-tab"
+              aria-pressed={statusFilter === "ALL"}
+              onClick={() => setStatusFilter("ALL")}
+            >
+              Todos
+            </button>
+            <button
+              type="button"
+              className="filter-tab"
+              aria-pressed={statusFilter === "DONE"}
+              onClick={() => setStatusFilter("DONE")}
+            >
+              {isExpenses ? "Pagados" : "Cobrados"}
+            </button>
+            <button
+              type="button"
+              className="filter-tab"
+              aria-pressed={statusFilter === "PENDING"}
+              onClick={() => setStatusFilter("PENDING")}
+            >
+              Pendientes
+            </button>
+          </div>
+
+          </div>
+          <label className="transaction-filter-field">
+            <span>{isExpenses ? "Categoría" : "Origen del ingreso"}</span>
+            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+              <option value="ALL">{isExpenses ? "Todas las categorías" : "Todos los orígenes"}</option>
+              {Object.entries(isExpenses ? EXPENSE_CATEGORY_LABELS : INCOME_SOURCE_LABELS).map(([key, meta]) => (
+                <option key={key} value={key}>{meta.label}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className="transaction-filter-summary">
+          <span role="status" aria-live="polite">
+            Mostrando {isExpenses ? filteredExpenses.length : filteredIncomes.length} de {isExpenses ? expenses.length : incomes.length} {isExpenses ? "gastos" : "ingresos"}
+          </span>
+          {(search || statusFilter !== "ALL" || categoryFilter !== "ALL") && (
+            <button type="button" className="transaction-filter-reset" onClick={() => {
+              setSearch(""); setStatusFilter("ALL"); setCategoryFilter("ALL");
+            }}>Limpiar filtros</button>
+          )}
+        </div>
+      </section>
 
       {/* Forms modal or inline view */}
       {showForm && isExpenses && (

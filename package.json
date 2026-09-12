@@ -1,14 +1,17 @@
 {
   "name": "budget-app",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "Budget App in Next.js",
+  "author": "JonMBello",
   "private": true,
+  "license": "MIT",
   "engines": {
     "node": ">=20.19.0"
   },
   "scripts": {
-    "dev": "next dev --hostname 127.0.0.1 --port 3002",
+    "dev": "next dev --hostname 127.0.0.1 --port 3003",
     "build": "next build && node scripts/prepare-standalone.mjs",
-    "start": "HOSTNAME=127.0.0.1 PORT=3002 node .next/standalone/server.js",
+    "start": "HOSTNAME=127.0.0.1 PORT=3003 node .next/standalone/server.js",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",

@@ -79,11 +79,10 @@ describe("budgets contracts", () => {
       month: 9,
       totalIncome: 25000,
       totalExpenses: 18000,
-      netBalance: 7000,
+      netBalance: 8500,
       carriedSavings: 1500,
-      projectedSavings: 8500,
     });
-    expect(summary.projectedSavings).toBe(8500);
+    expect(summary.netBalance).toBe(8500);
   });
 
   it("correctly computes toPeriodKey, parsePeriodKey, and crossover transitions", () => {
@@ -101,4 +100,12 @@ describe("budgets contracts", () => {
     expect(getPreviousPeriod(2027, 1)).toEqual({ year: 2026, month: 12 });
     expect(getPreviousPeriod(2026, 10)).toEqual({ year: 2026, month: 9 });
   });
+});
+
+it("requires the documented netBalance and preserves zero and negative balances", () => {
+  const input = { year: 2026, month: 7, carriedSavings: 100,
+    totalIncome: 500, totalExpenses: 900 };
+  expect(() => budgetSummarySchema.parse(input)).toThrow();
+  expect(budgetSummarySchema.parse({ ...input, netBalance: -300 }).netBalance).toBe(-300);
+  expect(budgetSummarySchema.parse({ ...input, netBalance: 0 }).netBalance).toBe(0);
 });

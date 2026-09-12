@@ -70,7 +70,7 @@ export function BudgetDashboard({
         totalExpenses: 0,
         netBalance: 0,
         carriedSavings: 0,
-        projectedSavings: 0,
+
         cashInPocketBalance: 0,
       };
     }
@@ -84,7 +84,7 @@ export function BudgetDashboard({
       totalExpenses: period.totalExpenses,
       netBalance: period.carriedSavings + net,
       carriedSavings: period.carriedSavings,
-      projectedSavings: period.carriedSavings + net,
+
       cashInPocketBalance: period.carriedSavings + net,
       totalExpectedIncome: period.totalIncome,
       totalReceivedIncome: period.totalIncome,

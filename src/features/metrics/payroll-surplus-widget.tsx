@@ -1,5 +1,6 @@
 "use client";
 
+import { InfoTooltip } from "@/components/info-tooltip";
 import { Money } from "@/components/ui";
 import type { PayrollSurplus } from "./contracts";
 
@@ -110,7 +111,7 @@ export function PayrollSurplusWidget({
       <div className="payroll-breakdown-grid">
         <div className="breakdown-step-box">
           <span className="step-tag">Paso 1</span>
-          <p className="step-title">Nómina total prevista</p>
+          <p className="step-title">Nómina total prevista <InfoTooltip label="Nómina total prevista">La fórmula considera toda la nómina presupuestada para el mes, no únicamente la cobrada a la fecha. No representa saldo líquido bancario garantizado.</InfoTooltip></p>
           <p className="step-amount green" data-testid="payroll-total-amount">
             <Money amount={totalPayrollIncome} />
           </p>
@@ -141,7 +142,7 @@ export function PayrollSurplusWidget({
 
         <div className="breakdown-step-box">
           <span className="step-tag">Paso 4</span>
-          <p className="step-title">Compras regulares</p>
+          <p className="step-title">Compras regulares <InfoTooltip label="Alcance de categorías">Categorías de consumo diario o variable (como Alimentos, Transporte o Salud) no reducen este remanente de nómina fija; su impacto se refleja directamente en el Balance general proyectado.</InfoTooltip></p>
           <p className="step-amount" data-testid="payroll-regular-amount">
             <Money amount={regularExpenses} />
           </p>
@@ -149,15 +150,7 @@ export function PayrollSurplusWidget({
         </div>
       </div>
 
-      {/* Contractual and regulatory disclaimers */}
-      <div className="payroll-disclaimers">
-        <p className="disclaimer-text">
-          ℹ️ <strong>Nómina total prevista:</strong> La fórmula considera toda la nómina presupuestada para el mes, no únicamente la cobrada a la fecha. No representa saldo líquido bancario garantizado.
-        </p>
-        <p className="disclaimer-text">
-          ℹ️ <strong>Alcance de categorías:</strong> Categorías de consumo diario o variable (como Alimentos, Transporte o Salud) no reducen este remanente de nómina fija; su impacto se refleja directamente en el Balance general proyectado.
-        </p>
-      </div>
+
     </div>
   );
 }

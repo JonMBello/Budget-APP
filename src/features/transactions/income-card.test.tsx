@@ -35,7 +35,7 @@ describe("IncomeCard", () => {
     expect(screen.getByText("Nómina Quincenal")).toBeInTheDocument();
     expect(screen.getByText("Nómina")).toBeInTheDocument();
     expect(screen.getByText(/\$18,500\.00/)).toBeInTheDocument();
-    expect(screen.getByText("Recibido")).toBeInTheDocument();
+    expect(screen.getByText("Cobrado")).toBeInTheDocument();
   });
 
   it("renders debt collection income with debtor name and split badge", () => {
@@ -68,7 +68,7 @@ describe("IncomeCard", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /estado:/i }));
+    await user.click(screen.getByRole("button", { name: "Marcar como pendiente" }));
     expect(onToggleReceived).toHaveBeenCalledWith(mockIncome);
 
     await user.click(screen.getByRole("button", { name: "Editar" }));

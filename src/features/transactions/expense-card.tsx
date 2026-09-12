@@ -6,6 +6,7 @@ import {
   type Expense,
   type ExpenseCategory,
 } from "./contracts";
+import { TransactionCardActions } from "./transaction-actions";
 
 export const EXPENSE_CATEGORY_LABELS: Record<
   ExpenseCategory,
@@ -74,25 +75,10 @@ export function ExpenseCard({
             )}
           </div>
 
-          <button
-            type="button"
-            className={`status-pill ${isPaid ? "paid" : "pending"}`}
-            disabled={isClosed || pendingAction || !onTogglePaid}
-            onClick={() => onTogglePaid?.(expense)}
-            title={
-              isClosed
-                ? "El periodo está cerrado"
-                : isPaid
-                ? "Marcar como pendiente de pago al banco"
-                : "Marcar como pagado al banco"
-            }
-            aria-label={`Estado: ${
-              isPaid ? "Pagado al banco" : "Pendiente de pago al banco"
-            }. Haz clic para cambiar.`}
-          >
-            <span className={`dot ${isPaid ? "green" : "blue"}`} />
+          <span className={`transaction-state ${isPaid ? "complete" : "waiting"}`}>
+            <span aria-hidden="true">{isPaid ? "✓" : "◷"}</span>
             {isPaid ? "Pagado" : "Pendiente"}
-          </button>
+          </span>
         </div>
 
         <h3 className="transaction-title">{expense.title}</h3>
@@ -166,32 +152,17 @@ export function ExpenseCard({
           </div>
         )}
 
-        {!isClosed && (onEdit || onDelete) && (
-          <div className="transaction-actions">
-            {onEdit && (
-              <button
-                type="button"
-                className="button secondary"
-                style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.8125rem", flex: 1 }}
-                disabled={pendingAction}
-                onClick={() => onEdit(expense)}
-              >
-                Editar
-              </button>
-            )}
-            {onDelete && (
-              <button
-                type="button"
-                className="button danger"
-                style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.8125rem" }}
-                disabled={pendingAction}
-                onClick={() => onDelete(expense)}
-                aria-label={`Eliminar gasto ${expense.title}`}
-              >
-                Eliminar
-              </button>
-            )}
-          </div>
+        {!isClosed && (
+          <TransactionCardActions
+            pendingAction={pendingAction}
+            statusComplete={isPaid}
+            markCompleteLabel="Marcar como pagado"
+            markPendingLabel="Marcar como pendiente"
+            onToggleStatus={onTogglePaid ? () => onTogglePaid(expense) : undefined}
+            onEdit={onEdit ? () => onEdit(expense) : undefined}
+            onDelete={onDelete ? () => onDelete(expense) : undefined}
+            deleteAriaLabel={`Eliminar gasto ${expense.title}`}
+          />
         )}
       </div>
     </div>
