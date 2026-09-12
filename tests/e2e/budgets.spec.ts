@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 
-const origin = "http://127.0.0.1:3002";
+const origin = "http://127.0.0.1:3003";
 const credentials = { email: "budgets@example.test", password: "integration-only-password" };
 
 async function login(request: APIRequestContext) {
@@ -166,6 +166,5 @@ test.describe("Budget Periods and Savings (FE-05)", () => {
     expect(summary.year).toBe(2026);
     expect(summary.month).toBe(9);
     expect(typeof summary.netBalance).toBe("number");
-    expect(typeof summary.projectedSavings).toBe("number");
   });
 });

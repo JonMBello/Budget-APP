@@ -4,7 +4,7 @@ Destino: `https://budget.jonmb.com/app`, API `https://budget.jonmb.com/api`, Swa
 
 Next.js requiere proceso Node por sus sesiones y handlers. Configurar `basePath: '/app'` en build; cambiarlo exige reconstruir. Servir `.next` como un sitio estático no soporta este diseño. Referencias: [basePath](https://nextjs.org/docs/app/api-reference/config/next-config-js/basePath) y [self-hosting de Next.js](https://nextjs.org/docs/app/guides/self-hosting).
 
-Ejemplo conceptual de Caddy, a completar con los puertos existentes del VPS; se usa 3000 para API (como el ejemplo de Budget-API) y 3002 para Next.js, ambos solo en loopback:
+Ejemplo conceptual de Caddy, a completar con los puertos existentes del VPS; se usa 3000 para API (como el ejemplo de Budget-API) y 3003 para Next.js, ambos solo en loopback:
 
 ```caddyfile
 budget.jonmb.com {
@@ -17,7 +17,7 @@ budget.jonmb.com {
 
     @app path /app /app/*
     handle @app {
-        reverse_proxy 127.0.0.1:3002
+        reverse_proxy 127.0.0.1:3003
     }
 
     handle / {

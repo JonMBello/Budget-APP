@@ -21,7 +21,7 @@ export function TransactionCardActions({
   onToggleStatus?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
-  deleteAriaLabel: string;
+  deleteAriaLabel?: string;
   deleteDisabled?: boolean;
   deleteTitle?: string;
 }) {
@@ -66,8 +66,8 @@ export function TransactionCardActions({
           className="transaction-icon-action danger"
           disabled={pendingAction || deleteDisabled}
           onClick={onDelete}
-          aria-label={deleteAriaLabel}
-          title={deleteTitle ?? deleteAriaLabel}
+          aria-label={deleteAriaLabel ?? "Eliminar"}
+          title={deleteTitle ?? deleteAriaLabel ?? "Eliminar"}
         >
           <Icon name="trash" />
         </button>

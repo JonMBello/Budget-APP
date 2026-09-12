@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 
-const origin = "http://127.0.0.1:3002";
+const origin = "http://127.0.0.1:3003";
 const credentials = { email: "transactions@example.test", password: "integration-only-password" };
 
 async function login(request: APIRequestContext) {

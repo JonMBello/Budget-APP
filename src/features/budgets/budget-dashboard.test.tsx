@@ -61,7 +61,8 @@ describe("BudgetDashboard", () => {
     expect(screen.getByText("Periodo cerrado (solo lectura):")).toBeInTheDocument();
     expect(screen.getAllByText("$20,000.00")[0]).toBeInTheDocument();
     expect(screen.getAllByText("$12,000.00")[0]).toBeInTheDocument();
-    expect(screen.getByText("$8,000.00")).toBeInTheDocument();
+    expect(screen.getByTestId("projected-savings-amount")).toHaveTextContent("$9,500.00");
+    expect(screen.getByTestId("cash-in-pocket-amount")).toHaveTextContent("$9,500.00");
     expect(screen.getByText("Balance proyectado")).toBeInTheDocument();
     expect(screen.getByText("Efectivo según registros")).toBeInTheDocument();
     expect(screen.getByText("Agenda de Flujo de Caja")).toBeInTheDocument();

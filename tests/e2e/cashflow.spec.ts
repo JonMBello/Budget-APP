@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 
-const origin = "http://127.0.0.1:3002";
+const origin = "http://127.0.0.1:3003";
 const credentials = {
   email: "cashflow@example.test",
   password: "integration-only-password",
@@ -174,12 +174,12 @@ test.describe("Metrics, Balance, Payroll Surplus and Cashflow (FE-08)", () => {
 
     // Certified Balance Calculations:
     // carriedSavings: 1000, totalIncome: 25800, totalExpenses: 9100
-    // projectedSavings: 1000 + 25800 - 9100 = 17700
+    // netBalance (balance proyectado): 1000 + 25800 - 9100 = 17700
     // cashInPocketBalance: 1000 + 0 - 0 = 1000
     expect(summary.carriedSavings).toBe(1000);
     expect(summary.totalIncome).toBe(25800);
     expect(summary.totalExpenses).toBe(9100);
-    expect(summary.projectedSavings).toBe(17700);
+    expect(summary.netBalance).toBe(17700);
     expect(summary.cashInPocketBalance).toBe(1000);
 
     // Certified Payroll Surplus:
