@@ -1,0 +1,23 @@
+[Unit]
+Description=Budget personal finance frontend
+After=network.target
+
+[Service]
+Type=simple
+User=budget
+WorkingDirectory=/opt/budget-app
+Environment=NODE_ENV=production
+Environment=PORT=3002
+Environment=HOSTNAME=127.0.0.1
+EnvironmentFile=/etc/budget-app.env
+ExecStart=/usr/bin/node .next/standalone/server.js
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/budget-app
+
+[Install]
+WantedBy=multi-user.target

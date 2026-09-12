@@ -1,0 +1,143 @@
+"use client";
+
+import { useState } from "react";
+import { z } from "zod";
+import { Field, ErrorState } from "@/components/ui";
+import { ClientError, clientRequest } from "@/lib/client";
+import {
+  createPersonSchema,
+  updatePersonSchema,
+  type Person,
+} from "./contracts";
+
+export function PersonForm({
+  person,
+  onSuccess,
+  onCancel,
+}: {
+  person?: Person;
+  onSuccess?: (saved: Person) => void;
+  onCancel?: () => void;
+}) {
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState("");
+  const [fields, setFields] = useState<Record<string, string[] | undefined>>({});
+
+  const isEditing = Boolean(person);
+
+  async function submit(event: React.SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (pending) return;
+    setMessage("");
+    setFields({});
+
+    const formData = new FormData(event.currentTarget);
+    const raw = Object.fromEntries(formData);
+
+    const schema = isEditing ? updatePersonSchema : createPersonSchema;
+    const validation = schema.safeParse(raw);
+
+    if (!validation.success) {
+      setFields(z.flattenError<unknown>(validation.error).fieldErrors);
+      return;
+    }
+
+    setPending(true);
+    try {
+      const endpoint = isEditing ? `/people/${person!.id}` : "/people";
+      const method = isEditing ? "PATCH" : "POST";
+      const saved = await clientRequest<Person>(endpoint, {
+        method,
+        body: validation.data,
+      });
+      if (onSuccess) onSuccess(saved);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "No pudimos guardar los datos de la persona.",
+      );
+      if (error instanceof ClientError && error.fields) {
+        setFields(error.fields);
+      }
+      setPending(false);
+    }
+  }
+
+  return (
+    <form className="profile-card" onSubmit={submit} noValidate aria-busy={pending}>
+      <Field
+        label="Nombre completo o alias"
+        name="name"
+        defaultValue={person?.name}
+        placeholder="ej. Laura Gómez, Hermano, Juan"
+        required
+        minLength={2}
+        hint="Al menos 2 caracteres para identificar a la persona."
+        error={fields.name?.[0]}
+      />
+
+      <Field
+        label="Código de país (opcional)"
+        name="phoneCode"
+        type="tel"
+        defaultValue={person?.phoneCode ?? ""}
+        placeholder="ej. +52"
+        error={fields.phoneCode?.[0]}
+      />
+      <Field
+        label="Teléfono (opcional)"
+        name="phone"
+        type="tel"
+        defaultValue={person?.phone ?? ""}
+        placeholder="ej. 5512345678"
+        hint="Sin código de país."
+        error={fields.phone?.[0]}
+      />
+      <Field
+        label="Correo electrónico (opcional)"
+        name="email"
+        type="email"
+        defaultValue={person?.email ?? ""}
+        placeholder="ej. correo@ejemplo.com"
+        error={fields.email?.[0]}
+      />
+
+      <div className="field">
+        <label htmlFor="person-notes">Notas (opcional)</label>
+        <textarea
+          id="person-notes"
+          name="notes"
+          defaultValue={person?.notes ?? ""}
+          placeholder="ej. Cuenta compartida de Spotify, préstamo de viaje, etc."
+          rows={3}
+        />
+        {fields.notes?.[0] && <p className="field-error">{fields.notes[0]}</p>}
+      </div>
+
+      {message && (
+        <div className="form-message">
+          <ErrorState message={message} />
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
+        <button className="button" type="submit" disabled={pending}>
+          {pending
+            ? "Guardando…"
+            : isEditing
+              ? "Guardar cambios"
+              : "Registrar persona"}
+        </button>
+        {onCancel && (
+          <button
+            className="button secondary"
+            type="button"
+            disabled={pending}
+            onClick={onCancel}
+          >
+            Cancelar
+          </button>
+        )}
+      </div>
+    </form>
+  );
+}

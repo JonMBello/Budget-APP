@@ -1,0 +1,18 @@
+# Confirm both upstream ports before installing on the VPS.
+budget.jonmb.com {
+    encode zstd gzip
+    @api path /api /api/*
+    handle @api {
+        reverse_proxy 127.0.0.1:3000
+    }
+    @app path /app /app/*
+    handle @app {
+        reverse_proxy 127.0.0.1:3002
+    }
+    handle / {
+        redir /app 302
+    }
+    handle {
+        respond "Not found" 404
+    }
+}
