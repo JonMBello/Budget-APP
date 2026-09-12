@@ -1,61 +1,45 @@
 import { z } from "zod";
 
-export const createPersonSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, "El nombre debe tener al menos 2 caracteres.")
-    .max(100, "El nombre no puede exceder 100 caracteres."),
-  contact: z
-    .string()
-    .trim()
-    .max(100, "El contacto no puede exceder 100 caracteres.")
-    .optional()
-    .or(z.literal(""))
-    .transform((val) => val || undefined),
-  notes: z
-    .string()
-    .trim()
-    .max(500, "Las notas no pueden exceder 500 caracteres.")
-    .optional()
-    .or(z.literal(""))
-    .transform((val) => val || undefined),
-});
+const optionalText = z.string().trim().optional().transform((value) => value || undefined);
+const optionalEmail = z.union([z.email("Ingresa un correo válido."), z.literal("")]).optional();
+const personFields = {
+  name: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres."),
+  phoneCode: optionalText,
+  phone: optionalText,
+  email: z.string().trim().optional().pipe(optionalEmail).transform((value) => value || undefined),
+  notes: optionalText,
+};
+
+export const createPersonSchema = z.object(personFields);
 
 export const updatePersonSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, "El nombre debe tener al menos 2 caracteres.")
-    .max(100, "El nombre no puede exceder 100 caracteres.")
-    .optional(),
-  contact: z
-    .string()
-    .trim()
-    .max(100, "El contacto no puede exceder 100 caracteres.")
-    .optional()
-    .or(z.literal(""))
-    .transform((val) => val || undefined),
-  notes: z
-    .string()
-    .trim()
-    .max(500, "Las notas no pueden exceder 500 caracteres.")
-    .optional()
-    .or(z.literal(""))
-    .transform((val) => val || undefined),
+  name: personFields.name.optional(),
+  phoneCode: z.string().trim().nullable().optional(),
+  phone: z.string().trim().nullable().optional(),
+  email: z.string().trim().pipe(z.union([z.email("Ingresa un correo válido."), z.literal("")])).nullable().optional()
+    .transform((value) => value === "" ? null : value),
+  notes: z.string().trim().nullable().optional(),
+  isActive: z.boolean().optional(),
 });
 
 export const personSchema = z.object({
   id: z.string().min(1),
   name: z.string(),
-  contact: z.string().optional(),
-  notes: z.string().optional(),
+  phoneCode: z.string().nullable().optional(),
+  phone: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
   isActive: z.boolean().default(true),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 });
 
 export type Person = z.infer<typeof personSchema>;
+
+export function personContact(person: Person): string {
+  return [ [person.phoneCode, person.phone].filter(Boolean).join(" "), person.email ]
+    .filter(Boolean).join(" · ");
+}
 
 export const msiInstallmentItemSchema = z.object({
   title: z.string(),

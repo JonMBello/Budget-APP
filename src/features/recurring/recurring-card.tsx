@@ -124,7 +124,7 @@ export function RecurringCard({
         <div className="recurring-meta-item">
           <span>Fecha de inicio:</span>
           <strong style={{ color: "var(--text)" }}>
-            {formatDate(template.startDate)}
+            {formatDate(template.startDate ?? null)}
           </strong>
         </div>
 

@@ -1,5 +1,7 @@
 "use client";
 
+import { personContact } from "@/features/people/contracts";
+
 import { useState } from "react";
 import { formatMoney } from "@/lib/format";
 import { type Person } from "@/features/people/contracts";
@@ -123,7 +125,7 @@ export function SplitEditor({
                   </option>
                   {people.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} {p.contact ? `(${p.contact})` : ""}
+                      {p.name} {personContact(p) ? `(${personContact(p)})` : ""}
                     </option>
                   ))}
                 </select>

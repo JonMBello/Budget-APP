@@ -8,21 +8,21 @@ const peopleFixture: Person[] = [
   {
     id: "p-1",
     name: "Ana Morales",
-    contact: "anam@example.test",
+    email: "anam@example.test",
     notes: "Colega",
     isActive: true,
   },
   {
     id: "p-2",
     name: "Roberto Silva",
-    contact: "5599887766",
+    phone: "5599887766",
     notes: "Gimnasio",
     isActive: true,
   },
   {
     id: "p-3",
     name: "Inactivo Pasado",
-    contact: "antiguo@example.test",
+    email: "antiguo@example.test",
     isActive: false,
   },
 ];

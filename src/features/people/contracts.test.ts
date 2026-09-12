@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createPersonSchema,
+  personSchema,
   debtSummarySchema,
   settleDebtSchema,
   updatePersonSchema,
@@ -10,13 +11,13 @@ describe("people contracts", () => {
   it("validates valid person with name and optional contact and notes", () => {
     const result = createPersonSchema.safeParse({
       name: "Laura Gómez",
-      contact: "5512345678",
+      phone: "5512345678",
       notes: "Amiga de la universidad",
     });
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.name).toBe("Laura Gómez");
-      expect(result.data.contact).toBe("5512345678");
+      expect(result.data.phone).toBe("5512345678");
       expect(result.data.notes).toBe("Amiga de la universidad");
     }
   });
@@ -24,12 +25,12 @@ describe("people contracts", () => {
   it("normalizes empty string contact and notes to undefined", () => {
     const result = createPersonSchema.safeParse({
       name: "Carlos Ruiz",
-      contact: "",
+      phone: "",
       notes: "   ",
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.contact).toBeUndefined();
+      expect(result.data.phone).toBeUndefined();
       expect(result.data.notes).toBeUndefined();
     }
   });
@@ -45,6 +46,20 @@ describe("people contracts", () => {
       notes: "Nueva nota de contacto",
     });
     expect(result.success).toBe(true);
+  });
+
+  it("accepts nullable optional fields returned by the API", () => {
+    expect(personSchema.parse({
+      id: "person-1", name: "Laura", phoneCode: null, phone: null,
+      email: null, notes: null, isActive: true,
+    }).notes).toBeNull();
+  });
+
+  it("validates email and omits empty optional creation fields", () => {
+    expect(createPersonSchema.safeParse({ name: "Laura", email: "invalid" }).success).toBe(false);
+    const body = createPersonSchema.parse({ name: "Laura", phoneCode: " ", phone: "", email: "", notes: " " });
+    expect(JSON.parse(JSON.stringify(body))).toEqual({ name: "Laura" });
+    expect(updatePersonSchema.parse({ email: "" })).toEqual({ email: null });
   });
 
   it("validates debtSummarySchema with all sections", () => {

@@ -23,7 +23,7 @@ En la tabla las rutas parten de `/api`. CRUD significa POST/GET de colección y 
 | Perfil | GET/PATCH /users/me | PATCH name/currency | email de solo lectura |
 | Tarjetas | CRUD /cards | includeInactive en GET; campos de CreateCardDto | DELETE desactiva |
 | Tarjetas | GET /cards/:id/preview-statement | date=YYYY-MM-DD | corte, vencimiento, mes impactado, daysUntilDue |
-| Personas | CRUD /people | includeInactive; nombre/contacto/notas | DELETE desactiva |
+| Personas | CRUD /people | includeInactive; name/phoneCode/phone/email/notes | DELETE desactiva |
 | Personas | GET /people/:id/debts | id | totalDebt, immediateDueAmount, nextPaymentDueDate, msiInstallments, recurringServices, singleExpenses |
 | Personas | POST /people/:id/settle | expenseId, amount, recurringTemplateId, notes opcionales en DTO | Solo expenseId tiene actualización persistente observada; GAP-04 |
 | Periodos | GET /budgets | Sin filtros de paginación verificados | Orden inverso; totales persistidos pueden estar desactualizados |
@@ -35,7 +35,7 @@ En la tabla las rutas parten de `/api`. CRUD significa POST/GET de colección y 
 | Periodos | PATCH /budgets/:year/:month | carriedSavings, totalIncome, totalExpenses, notes | UI limita a ajustes coherentes; GAP-03 |
 | Resumen | GET /budgets/current/summary; GET /budgets/:year/:month/summary | Año/mes | Totales calculados desde movimientos |
 | Recurrentes | CRUD /recurring | includeInactive y category en GET | category, no type |
-| Recurrentes | POST /recurring/instantiate | year, month | items devueltos, no Expense persistido observado; GAP-01 |
+| Recurrentes | POST /recurring/instantiate | periodId | Contrato acordado: periodId, year, month, createdCount, skippedCount; requiere implementación coordinada en Budget-API |
 | Recurrentes | POST /recurring/:id/advance | installmentsCount o payAll, notes | Modifica contador/estado; GAP-06 |
 | Recurrentes | PATCH /recurring/:id/cancel | Sin body requerido | Desactiva plantilla |
 | Gastos | CRUD /expenses | GET periodId y category | DELETE borra gasto; conserva ingreso recibido en remove |
@@ -88,3 +88,9 @@ Claves de consulta incluyen identidad y periodId/año/mes. Cancelar consultas ob
 ## Errores
 
 API devuelve statusCode, error, message (string o arreglo), timestamp y path. Mapear validaciones conocidas a campos en español y fallback legible para desconocidas. 401 → renovación acotada o login; API key mal configurada → diagnóstico de servidor. 403 → permiso/registro cerrado; 404 → no encontrado, no cero; 409 → conflicto/mes existente; 429 → espera indicada; 5xx/red → conservar formulario y recuperación. No borrar formularios al primer error ni mostrar stack traces.
+
+### Agregar recurrentes a un periodo
+
+La app envía `{ "periodId": "..." }` y requiere `{ "periodId": "...", "year": 2026, "month": 9, "createdCount": 3, "skippedCount": 2 }`. Los conteos deben ser enteros no negativos. El BFF rechaza respuestas antiguas o de otro periodo con 502, sin mostrar éxito. No usa el endpoint anterior como alternativa ni crea gastos por su cuenta.
+
+La API debe garantizar persistencia atómica de gastos/cobros/avances MSI e idempotencia. Desplegar el nuevo contrato de API antes o junto con esta app; la prueba con el servidor simulado no verifica esas garantías en producción.

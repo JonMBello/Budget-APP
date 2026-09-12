@@ -1,5 +1,7 @@
 "use client";
 
+import { personContact } from "@/features/people/contracts";
+
 import { useState } from "react";
 import { Field, AmountField, DateField, ErrorState } from "@/components/ui";
 import { clientRequest } from "@/lib/client";
@@ -79,7 +81,7 @@ export function IncomeForm({
         isReceived,
         dueDate: dueDate || null,
         debtorPersonId: source === "DEBT_COLLECTION" ? (debtorPersonId || null) : null,
-        notes: notes.trim() || null,
+        notes: notes.trim() || (isEditing ? null : undefined),
       };
 
       let result: Income;
@@ -232,7 +234,7 @@ export function IncomeForm({
             <option value="">Sin deudor asignado</option>
             {people.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.name} {p.contact ? `(${p.contact})` : ""}
+                {p.name} {personContact(p) ? `(${personContact(p)})` : ""}
               </option>
 
             ))}

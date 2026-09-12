@@ -38,7 +38,7 @@ export function PersonForm({
     const validation = schema.safeParse(raw);
 
     if (!validation.success) {
-      setFields(z.flattenError(validation.error).fieldErrors);
+      setFields(z.flattenError<unknown>(validation.error).fieldErrors);
       return;
     }
 
@@ -71,19 +71,34 @@ export function PersonForm({
         placeholder="ej. Laura Gómez, Hermano, Juan"
         required
         minLength={2}
-        maxLength={100}
         hint="Al menos 2 caracteres para identificar a la persona."
         error={fields.name?.[0]}
       />
 
       <Field
-        label="Contacto (opcional)"
-        name="contact"
-        defaultValue={person?.contact ?? ""}
-        placeholder="ej. 55 1234 5678, correo@ejemplo.com"
-        maxLength={100}
-        hint="Teléfono o correo para recordatorios o acuerdos."
-        error={fields.contact?.[0]}
+        label="Código de país (opcional)"
+        name="phoneCode"
+        type="tel"
+        defaultValue={person?.phoneCode ?? ""}
+        placeholder="ej. +52"
+        error={fields.phoneCode?.[0]}
+      />
+      <Field
+        label="Teléfono (opcional)"
+        name="phone"
+        type="tel"
+        defaultValue={person?.phone ?? ""}
+        placeholder="ej. 5512345678"
+        hint="Sin código de país."
+        error={fields.phone?.[0]}
+      />
+      <Field
+        label="Correo electrónico (opcional)"
+        name="email"
+        type="email"
+        defaultValue={person?.email ?? ""}
+        placeholder="ej. correo@ejemplo.com"
+        error={fields.email?.[0]}
       />
 
       <div className="field">
@@ -94,7 +109,6 @@ export function PersonForm({
           defaultValue={person?.notes ?? ""}
           placeholder="ej. Cuenta compartida de Spotify, préstamo de viaje, etc."
           rows={3}
-          maxLength={500}
         />
         {fields.notes?.[0] && <p className="field-error">{fields.notes[0]}</p>}
       </div>

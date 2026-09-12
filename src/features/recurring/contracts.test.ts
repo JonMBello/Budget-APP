@@ -145,11 +145,25 @@ describe("recurring contracts", () => {
     expect(update.isActive).toBe(false);
   });
 
-  it("validates instantiateRecurringSchema", () => {
-    const parsed = instantiateRecurringSchema.parse({ year: 2026, month: 9 });
-    expect(parsed.year).toBe(2026);
-    expect(parsed.month).toBe(9);
+  it.each(["SERVICE", "SUBSCRIPTION", "MSI"])("accepts nullable API response fields for %s", (category) => {
+    const response = {
+      id: "rec-1", userId: "u-1", title: "Compromiso", category,
+      amount: 200, currency: "MXN", exchangeRate: 1,
+      totalAmount: category === "MSI" ? 2400 : null,
+      totalInstallments: category === "MSI" ? 12 : null,
+      currentInstallment: category === "MSI" ? 1 : null,
+      startDate: null, cardId: null, split: null, notes: null,
+      isActive: true, isCompleted: false,
+    };
+    expect(recurringTemplateSchema.parse(response)).toMatchObject({
+      totalAmount: response.totalAmount, totalInstallments: response.totalInstallments,
+      currentInstallment: response.currentInstallment, startDate: null,
+    });
+  });
 
-    expect(() => instantiateRecurringSchema.parse({ year: 2026, month: 13 })).toThrow();
+  it("validates instantiateRecurringSchema", () => {
+    expect(instantiateRecurringSchema.parse({ periodId: "period-1" })).toEqual({ periodId: "period-1" });
+    expect(() => instantiateRecurringSchema.parse({ year: 2026, month: 9 })).toThrow();
+    expect(() => instantiateRecurringSchema.parse({ periodId: " " })).toThrow();
   });
 });

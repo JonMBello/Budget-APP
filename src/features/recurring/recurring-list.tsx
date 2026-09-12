@@ -1,25 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { formatMonth, periodHref } from "@/lib/format";
+import { toPeriodKey, type BudgetPeriod } from "@/features/budgets/contracts";
+import { useRef, useState } from "react";
 import { ConfirmDialog, EmptyState, ErrorState } from "@/components/ui";
 import { clientRequest } from "@/lib/client";
 import { type Card } from "@/features/cards/contracts";
 import { type Person } from "@/features/people/contracts";
 import { RecurringCard } from "./recurring-card";
 import { RecurringForm } from "./recurring-form";
-import { type RecurringTemplate } from "./contracts";
+import { instantiateRecurringResultSchema, type RecurringTemplate } from "./contracts";
 
 type FilterTab = "ALL" | "SERVICE" | "SUBSCRIPTION" | "MSI" | "INACTIVE";
 
 export function RecurringList({
+  period = null,
   initialTemplates,
   cards = [],
   people = [],
 }: {
+  period?: BudgetPeriod | null;
   initialTemplates: RecurringTemplate[];
   cards?: Card[];
   people?: Person[];
 }) {
+  const router = useRouter();
+  const inFlight = useRef(false);
   const [templates, setTemplates] = useState<RecurringTemplate[]>(initialTemplates);
   const [activeTab, setActiveTab] = useState<FilterTab>("ALL");
   const [adding, setAdding] = useState(false);
@@ -30,9 +38,9 @@ export function RecurringList({
   const [instantiateMessage, setInstantiateMessage] = useState<string | null>(null);
   const [instantiateError, setInstantiateError] = useState("");
 
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
+  const periodKey = period ? toPeriodKey(period.year, period.month) : null;
+  const periodLabel = periodKey ? formatMonth(periodKey) : "";
+  const canInstantiate = period?.status === "OPEN";
 
   // Filter calculation
   const displayedTemplates = templates.filter((t) => {
@@ -57,24 +65,29 @@ export function RecurringList({
   const inactiveCount = templates.filter((t) => !t.isActive || t.isCancelled).length;
 
   async function handleInstantiate() {
+    if (!period || !canInstantiate || inFlight.current) return;
+    inFlight.current = true;
     setPendingInstantiate(true);
     setInstantiateError("");
     setInstantiateMessage(null);
 
     try {
-      const response = await clientRequest<{
-        success: boolean;
-        count: number;
-        year: number;
-        month: number;
-      }>("/recurring/instantiate", {
+      const raw = await clientRequest<unknown>("/recurring/instantiate", {
         method: "POST",
-        body: { year: currentYear, month: currentMonth },
+        body: { periodId: period.id },
       });
-
-      setInstantiateMessage(
-        `Se instanciaron ${response.count} compromisos para el periodo ${response.month}/${response.year}.`,
-      );
+      const parsed = instantiateRecurringResultSchema.safeParse(raw);
+      if (!parsed.success || parsed.data.periodId !== period.id ||
+          parsed.data.year !== period.year || parsed.data.month !== period.month) {
+        throw new Error("No pudimos confirmar el resultado. Revisa los gastos del periodo antes de reintentar.");
+      }
+      const { createdCount, skippedCount } = parsed.data;
+      setInstantiateMessage(createdCount > 0
+        ? `Se agregaron ${createdCount} gastos a ${periodLabel}; ${skippedCount} ya estaban registrados.`
+        : skippedCount > 0
+          ? `No se agregaron gastos nuevos a ${periodLabel}; ${skippedCount} ya estaban registrados.`
+          : `No hay compromisos elegibles para agregar a ${periodLabel}.`);
+      router.refresh();
       setInstantiateDialogOpen(false);
 
       // Re-fetch or update templates to reflect incremented MSI installments
@@ -93,12 +106,17 @@ export function RecurringList({
           : "No pudimos instanciar los compromisos en el periodo.",
       );
     } finally {
+      inFlight.current = false;
       setPendingInstantiate(false);
     }
   }
 
   return (
     <div>
+      <p className="muted">{period
+        ? `Periodo destino: ${periodLabel} (${period.status === "OPEN" ? "abierto" : "cerrado"}).`
+        : "Selecciona o crea un periodo para agregar los compromisos."}</p>
+      {period?.status === "CLOSED" && <p className="muted">El periodo está cerrado. Selecciona uno abierto para agregar gastos.</p>}
       <div className="actions-bar">
         <div
           className="filter-tabs"
@@ -153,8 +171,9 @@ export function RecurringList({
             className="button secondary"
             type="button"
             onClick={() => setInstantiateDialogOpen(true)}
+            disabled={!canInstantiate || pendingInstantiate}
           >
-            ⚡ Instanciar en mes activo
+            {pendingInstantiate ? "Agregando…" : "Agregar al periodo"}
           </button>
           <button
             className="button"
@@ -180,7 +199,8 @@ export function RecurringList({
             alignItems: "center",
           }}
         >
-          <span>✓ {instantiateMessage}</span>
+          <span role="status">✓ {instantiateMessage}</span>
+          <Link href={periodHref("/expenses", periodKey)} prefetch={false}>Ver gastos del periodo</Link>
           <button
             type="button"
             style={{
@@ -259,15 +279,15 @@ export function RecurringList({
 
       <ConfirmDialog
         open={instantiateDialogOpen}
-        title="¿Instanciar compromisos del mes?"
+        title="¿Agregar compromisos al periodo?"
         pending={pendingInstantiate}
         onCancel={() => setInstantiateDialogOpen(false)}
         onConfirm={handleInstantiate}
       >
         <p style={{ color: "var(--text)", margin: "0 0 12px" }}>
-          Esta acción creará los gastos y cobros del periodo activo (
+          Esta acción creará los gastos y cobros del periodo seleccionado (
           <strong>
-            {currentMonth}/{currentYear}
+            {periodLabel}
           </strong>
           ) a partir de tus plantillas activas y vigentes.
         </p>

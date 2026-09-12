@@ -7,7 +7,7 @@ import type { Person } from "./contracts";
 const personFixture: Person = {
   id: "person-detail-1",
   name: "Valeria Ortiz",
-  contact: "valeria@example.test",
+  email: "valeria@example.test",
   notes: "Roomie",
   isActive: true,
 };

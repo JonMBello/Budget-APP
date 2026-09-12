@@ -1,5 +1,7 @@
 "use client";
 
+import { personContact } from "@/features/people/contracts";
+
 import { useState } from "react";
 import { EmptyState, Field } from "@/components/ui";
 import { PersonCard } from "./person-card";
@@ -18,7 +20,7 @@ export function PersonList({ initialPeople }: { initialPeople: Person[] }) {
     if (!showArchived && !p.isActive) return false;
     if (!query) return true;
     const nameMatch = p.name.toLowerCase().includes(query);
-    const contactMatch = p.contact?.toLowerCase().includes(query) ?? false;
+    const contactMatch = personContact(p)?.toLowerCase().includes(query) ?? false;
     return nameMatch || contactMatch;
   });
 
@@ -58,7 +60,7 @@ export function PersonList({ initialPeople }: { initialPeople: Person[] }) {
       <div style={{ maxWidth: "360px", marginTop: "16px" }}>
         <Field
           label="Buscar persona"
-          placeholder="Buscar por nombre o teléfono…"
+          placeholder="Buscar por nombre, teléfono o correo…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />

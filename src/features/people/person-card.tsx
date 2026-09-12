@@ -1,3 +1,4 @@
+import { personContact } from "@/features/people/contracts";
 import Link from "next/link";
 import { type Person } from "./contracts";
 
@@ -32,7 +33,7 @@ export function PersonCard({
             </span>
           )}
         </div>
-        {person.contact && <p className="person-contact">{person.contact}</p>}
+        {personContact(person) && <p className="person-contact">{personContact(person)}</p>}
         {person.notes && <p className="person-notes">{person.notes}</p>}
       </div>
     </>
@@ -43,7 +44,7 @@ export function PersonCard({
       <Link
         href={`/people/${person.id}`}
         className={`person-item ${!person.isActive ? "inactive" : ""}`}
-        aria-label={`${person.name}${person.contact ? `, ${person.contact}` : ""}${!person.isActive ? " (archivada)" : ""}`}
+        aria-label={`${person.name}${personContact(person) ? `, ${personContact(person)}` : ""}${!person.isActive ? " (archivada)" : ""}`}
       >
         {content}
       </Link>

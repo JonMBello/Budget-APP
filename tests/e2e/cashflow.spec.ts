@@ -45,7 +45,7 @@ test.describe("Metrics, Balance, Payroll Surplus and Cashflow (FE-08)", () => {
       headers: { Origin: origin },
       data: {
         name: "Carlos Slim Test",
-        contact: "carlos@test.com",
+        email: "carlos@test.com",
       },
     });
     expect(personRes.status()).toBe(201);

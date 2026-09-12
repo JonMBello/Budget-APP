@@ -142,7 +142,7 @@ export function ExpenseForm({
         paymentDueDate: paymentDueDate || null,
         isPaid,
         split: split ?? null,
-        notes: notes.trim() || null,
+        notes: notes.trim() || (isEditing ? null : undefined),
       };
 
       let result: Expense;

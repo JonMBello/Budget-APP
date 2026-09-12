@@ -24,10 +24,10 @@ export const recurringTemplateSchema = z.object({
   amount: z.number().positive(),
   currency: z.enum(["MXN", "USD"]).default("MXN"),
   exchangeRate: z.number().positive().optional(),
-  totalAmount: z.number().positive().optional(),
-  totalInstallments: z.number().int().min(2).optional(),
-  currentInstallment: z.number().int().min(1).optional(),
-  startDate: z.string().refine(isCivilDate, "Fecha de inicio inválida (YYYY-MM-DD)"),
+  totalAmount: z.number().positive().nullable().optional(),
+  totalInstallments: z.number().int().min(2).nullable().optional(),
+  currentInstallment: z.number().int().min(1).nullable().optional(),
+  startDate: z.string().refine(isCivilDate, "Fecha de inicio inválida (YYYY-MM-DD)").nullable().optional(),
   cardId: z.string().nullable().optional(),
   split: recurringSplitSchema.nullable().optional(),
   isActive: z.boolean(),
@@ -142,6 +142,13 @@ export const advanceMsiSchema = z
 export type AdvanceMsiInput = z.infer<typeof advanceMsiSchema>;
 
 export const instantiateRecurringSchema = z.object({
+  periodId: z.string().trim().min(1, "Selecciona un periodo presupuestario."),
+});
+
+export const instantiateRecurringResultSchema = z.object({
+  periodId: z.string().min(1),
+  createdCount: z.number().int().nonnegative(),
+  skippedCount: z.number().int().nonnegative(),
   year: z.number().int().min(2000).max(2100),
   month: z.number().int().min(1).max(12),
 });

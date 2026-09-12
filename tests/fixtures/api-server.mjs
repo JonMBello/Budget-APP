@@ -242,8 +242,10 @@ const server = createServer(async (request, response) => {
         id: `person-${randomUUID().slice(0, 8)}`,
         userId: user.id,
         name: body.name.trim(),
-        contact: body.contact ? body.contact.trim() : undefined,
-        notes: body.notes ? body.notes.trim() : undefined,
+        phoneCode: body.phoneCode ?? null,
+        phone: body.phone ?? null,
+        email: body.email ?? null,
+        notes: body.notes ?? null,
         isActive: true,
         createdAt: new Date().toISOString(),
       };
@@ -262,8 +264,10 @@ const server = createServer(async (request, response) => {
     if (request.method === "GET") return send(200, person);
     if (request.method === "PATCH") {
       if (body.name) person.name = body.name.trim();
-      if (body.contact !== undefined) person.contact = body.contact ? body.contact.trim() : undefined;
-      if (body.notes !== undefined) person.notes = body.notes ? body.notes.trim() : undefined;
+      for (const field of ["phoneCode", "phone", "email"]) {
+        if (body[field] !== undefined) person[field] = body[field];
+      }
+      if (body.notes !== undefined) person.notes = body.notes;
       return send(200, person);
     }
     if (request.method === "DELETE") {
@@ -599,22 +603,26 @@ function computePeriodSummary(period, user) {
   }
 
   if (pathname === "/api/recurring/instantiate" && request.method === "POST") {
-    const recurringMap = getRecurring(user.id);
-    let count = 0;
-    for (const template of recurringMap.values()) {
-      if (template.isActive && !template.isCancelled) {
-        count++;
-        if (template.category === "MSI" && template.currentInstallment && template.totalInstallments) {
-          if (template.currentInstallment < template.totalInstallments) {
-            template.currentInstallment++;
-          } else {
-            template.isActive = false;
-          }
-          template.updatedAt = new Date().toISOString();
-        }
-      }
+    // Simulate the agreed API contract; production atomicity belongs to Budget-API.
+    const period = Array.from(getBudgets(user.id).values()).find((p) => p.id === body.periodId);
+    if (!period) return send(404, { message: "Period not found" });
+    if (period.status !== "OPEN") return send(409, { message: "Period is closed" });
+    const expenses = getExpenses(user.id);
+    let createdCount = 0;
+    let skippedCount = 0;
+    const monthKey = `${period.year}-${String(period.month).padStart(2, "0")}`;
+    for (const template of getRecurring(user.id).values()) {
+      const existing = Array.from(expenses.values()).some((e) => e.periodId === period.id && e.templateId === template.id);
+      if (existing) { skippedCount++; continue; }
+      if (!template.isActive || template.isCancelled || (template.startDate && template.startDate.slice(0, 7) > monthKey)) continue;
+      const id = `expense-${randomUUID().slice(0, 8)}`;
+      expenses.set(id, { id, userId: user.id, periodId: period.id, templateId: template.id,
+        title: template.title, amount: template.amount, category: template.category === "OTHER_RECURRING" ? "OTHER" : template.category,
+        date: `${monthKey}-01`, cardId: template.cardId ?? null, isPaid: false, notes: template.notes ?? null,
+      });
+      createdCount++;
     }
-    return send(200, { success: true, count, year: body.year, month: body.month });
+    return send(200, { periodId: period.id, year: period.year, month: period.month, createdCount, skippedCount });
   }
 
   const recurringMatch = pathname.match(/^\/api\/recurring\/([^/]+)$/);

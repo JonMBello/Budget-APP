@@ -222,17 +222,26 @@ test.describe("Recurring, Services, and MSI (FE-06)", () => {
   }) => {
     await login(request);
 
-    // Call instantiate for 2026-09
-    const instantiateRes = await request.post("/app/bff/recurring/instantiate", {
-      headers: { Origin: origin },
-      data: { year: 2026, month: 9 },
+    const initialized = await request.post("/app/bff/budgets/initialize", {
+      headers: { Origin: origin }, data: { year: 2025, month: 4 },
     });
-    expect(instantiateRes.status()).toBe(200);
-    const result = await instantiateRes.json();
-    expect(result.success).toBe(true);
-    expect(typeof result.count).toBe("number");
-    expect(result.year).toBe(2026);
-    expect(result.month).toBe(9);
+    expect(initialized.status()).toBe(201);
+    const period = await initialized.json();
+    const created = await request.post("/app/bff/recurring", {
+      headers: { Origin: origin }, data: { title: "Internet de prueba", category: "SERVICE", amount: 300, startDate: "2025-04-01" },
+    });
+    expect(created.status()).toBe(201);
+    const options = { headers: { Origin: origin }, data: { periodId: period.id } };
+    const first = await request.post("/app/bff/recurring/instantiate", options);
+    expect(first.status()).toBe(200);
+    const result = await first.json();
+    expect(result).toMatchObject({ periodId: period.id, year: 2025, month: 4 });
+    expect(result.createdCount).toBeGreaterThan(0);
+    const second = await request.post("/app/bff/recurring/instantiate", options);
+    expect(second.status()).toBe(200);
+    expect(await second.json()).toMatchObject({ createdCount: 0, skippedCount: result.createdCount });
+    const expenses = await request.get(`/app/bff/expenses?periodId=${period.id}`);
+    expect((await expenses.json()).some((e: { title: string }) => e.title === "Internet de prueba")).toBe(true);
   });
 
   test("renders recurring page and filters via API and server component", async ({

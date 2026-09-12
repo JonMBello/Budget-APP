@@ -18,7 +18,7 @@ test.describe("People and Debts Directory (FE-04)", () => {
       headers: { Origin: origin },
       data: {
         name: "A",
-        contact: "123",
+        phone: "123",
       },
     });
     expect(invalid.status()).toBe(400);
@@ -39,7 +39,7 @@ test.describe("People and Debts Directory (FE-04)", () => {
       headers: { Origin: origin },
       data: {
         name: "Mateo Silva",
-        contact: "mateo@example.test",
+        email: "mateo@example.test",
         notes: "Préstamo de viaje",
       },
     });
@@ -47,7 +47,7 @@ test.describe("People and Debts Directory (FE-04)", () => {
     const person = await valid.json();
     expect(person).toMatchObject({
       name: "Mateo Silva",
-      contact: "mateo@example.test",
+      email: "mateo@example.test",
       notes: "Préstamo de viaje",
       isActive: true,
     });
@@ -61,7 +61,7 @@ test.describe("People and Debts Directory (FE-04)", () => {
       headers: { Origin: origin },
       data: {
         name: "Esteban Deuda",
-        contact: "5511223344",
+        phone: "5511223344",
       },
     });
     const person = await created.json();
@@ -93,7 +93,7 @@ test.describe("People and Debts Directory (FE-04)", () => {
       headers: { Origin: origin },
       data: {
         name: "Persona Para Archivar",
-        contact: "antiguo@example.test",
+        email: "antiguo@example.test",
       },
     });
     const person = await created.json();
