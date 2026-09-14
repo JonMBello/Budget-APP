@@ -118,8 +118,9 @@ la API permanecen en el VPS; no hacen falta para compilar en GitHub.
 
 Subir estos archivos a GitHub e integrar el workflow en la rama predeterminada.
 Abrir Actions → Deploy budget-app → Run workflow y seleccionar la versión.
-El workflow valida, compila, copia y ejecuta `pm2 startOrRestart`: crea
-`budget-app` la primera vez y lo reinicia en siguientes publicaciones.
+El workflow valida, compila, copia y recrea únicamente el proceso `budget-app`
+en PM2 para evitar que conserve la ruta de una publicación anterior. Verifica
+que el directorio del proceso en `/proc/<pid>/cwd` corresponda a la nueva versión.
 El reinicio en modo fork puede causar una interrupción breve.
 
 Cada paquete se extrae en `releases/<commit>-<run>-<attempt>`, `current` apunta a

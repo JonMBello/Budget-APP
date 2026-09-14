@@ -19,7 +19,15 @@ chmod 700 "$root/shared/sessions"
 activate() {
   ln -s "$1" "$root/current.next" || return 1
   mv -Tf "$root/current.next" "$root/current" || return 1
-  pm2 startOrRestart "$root/current/ecosystem.config.cjs" --only budget-app --update-env
+  # Restarting an existing PM2 entry can retain the previous release's cwd/script.
+  if pm2 describe budget-app >/dev/null 2>&1; then
+    pm2 delete budget-app || return 1
+  fi
+  pm2 start "$root/current/ecosystem.config.cjs" --only budget-app --update-env || return 1
+  local pid
+  pid=$(pm2 pid budget-app) || return 1
+  [[ "$pid" =~ ^[0-9]+$ && "$pid" != 0 ]] || return 1
+  [[ "$(readlink -f "/proc/$pid/cwd")" == "$1" ]]
 }
 healthy() {
   for attempt in {1..15}; do
