@@ -10,6 +10,44 @@ const mockPeople: Person[] = [
 ];
 
 describe("SplitEditor", () => {
+  it.each([1, 25, 33.333, 99.99, 100])(
+    "accepts %s percent without a native validation error",
+    async (percentage) => {
+      const user = userEvent.setup();
+      const onChange = vi.fn();
+      render(
+        <SplitEditor
+          amount={1000}
+          split={{ personId: "p-1", splitType: "PERCENTAGE", splitValue: 50, isDebtActive: true }}
+          people={mockPeople}
+          onChange={onChange}
+        />,
+      );
+
+      const input = screen.getByLabelText("Porcentaje deudor (%)");
+      await user.clear(input);
+      await user.type(input, String(percentage));
+
+      expect(input).toBeValid();
+      expect(onChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ splitType: "PERCENTAGE", splitValue: percentage }),
+      );
+    },
+  );
+
+  it.each([0, 0.99, 100.01])("rejects %s percent outside the allowed range", (percentage) => {
+    render(
+      <SplitEditor
+        amount={1000}
+        split={{ personId: "p-1", splitType: "PERCENTAGE", splitValue: percentage, isDebtActive: true }}
+        people={mockPeople}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText("Porcentaje deudor (%)")).toBeInvalid();
+  });
+
   it("renders disabled state and empty notice when toggle is unchecked", () => {
     const onChange = vi.fn();
     render(

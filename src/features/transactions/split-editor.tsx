@@ -159,8 +159,8 @@ export function SplitEditor({
                   <input
                     id="split-value-input"
                     type="number"
-                    step={splitType === "PERCENTAGE" ? "1" : "0.01"}
-                    min="0.01"
+                    step={splitType === "PERCENTAGE" ? "any" : "0.01"}
+                    min={splitType === "PERCENTAGE" ? "1" : "0.01"}
                     max={splitType === "PERCENTAGE" ? "100" : String(amount)}
                     value={isNaN(splitValue) ? "" : splitValue}
                     disabled={disabled}
