@@ -118,6 +118,7 @@ export default async function HomePage(props: {
 
   return (
     <BudgetDashboard
+      key={activePeriod?.id ?? "no-period"}
       userName={user.name}
       initialPeriod={activePeriod}
       allPeriods={allPeriods}
