@@ -289,13 +289,13 @@ const server = createServer(async (request, response) => {
       immediateDueAmount: hasDebt ? 1000 : 0,
       nextPaymentDueDate: hasDebt ? "2026-10-05" : null,
       msiInstallments: hasDebt
-        ? [{ title: "Laptop Trabajo", currentInstallment: 2, totalInstallments: 6, amount: 1500, paymentDueDate: "2026-10-05", cardName: "Banorte Oro" }]
+        ? [{ title: "Laptop Trabajo", currentInstallment: 2, totalInstallments: 6, installmentAmount: 1500, nextDueDate: "2026-10-05", cardName: "Banorte Oro" }]
         : [],
       recurringServices: hasDebt
-        ? [{ title: "Spotify Familiar", amount: 200, paymentDueDate: "2026-10-01" }]
+        ? [{ title: "Spotify Familiar", amount: 200, nextDueDate: "2026-10-01" }]
         : [],
       singleExpenses: hasDebt
-        ? [{ expenseId: "exp-single-1", title: "Cena en restaurante", amount: 800, paymentDueDate: "2026-09-20", settled: false }]
+        ? [{ id: "exp-single-1", title: "Cena en restaurante", amount: 800, paymentDueDate: "2026-09-20", isPaid: false }]
         : [],
     };
     return send(200, debts);

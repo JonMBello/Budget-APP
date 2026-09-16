@@ -42,6 +42,20 @@ afterEach(() => {
 });
 
 describe("DebtSummaryView", () => {
+  it("does not claim there are no debts after a failed request and allows retry", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 502, json: async () => ({ message: "No pudimos consultar las deudas." }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => debtsFixture });
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<DebtSummaryView personId="person-100" />);
+    expect(await screen.findByText("No pudimos consultar las deudas.")).toBeInTheDocument();
+    expect(screen.queryByText("Esta persona no tiene deudas ni cobros pendientes registrados.")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Volver a intentar" }));
+    expect(await screen.findByText("PlayStation 5")).toBeInTheDocument();
+    expect(screen.queryByText("No pudimos consultar las deudas.")).not.toBeInTheDocument();
+  });
+
   it("fetches and displays debt summary with breakdowns", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

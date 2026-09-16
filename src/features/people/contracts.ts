@@ -75,6 +75,26 @@ export const debtSummarySchema = z.object({
 
 export type DebtSummary = z.infer<typeof debtSummarySchema>;
 
+// The API uses different names for installment amounts, due dates and debt IDs.
+export const apiDebtSummarySchema = z.object({
+  totalDebt: z.number(),
+  immediateDueAmount: z.number(),
+  nextPaymentDueDate: z.string().nullable().optional(),
+  msiInstallments: z.array(msiInstallmentItemSchema.omit({ amount: true, paymentDueDate: true }).extend({
+    installmentAmount: z.number(),
+    nextDueDate: z.string().nullable().optional(),
+  }).transform(({ installmentAmount, nextDueDate, ...item }) => ({
+    ...item, amount: installmentAmount, paymentDueDate: nextDueDate,
+  }))),
+  recurringServices: z.array(recurringServiceItemSchema.omit({ paymentDueDate: true }).extend({
+    nextDueDate: z.string().nullable().optional(),
+  }).transform(({ nextDueDate, ...item }) => ({ ...item, paymentDueDate: nextDueDate }))),
+  singleExpenses: z.array(singleExpenseItemSchema.omit({ expenseId: true, settled: true }).extend({
+    id: z.string().min(1),
+    isPaid: z.boolean(),
+  }).transform(({ id, isPaid, ...item }) => ({ ...item, expenseId: id, settled: isPaid }))),
+});
+
 export const settleDebtSchema = z.object({
   expenseId: z.string().min(1, "El ID del gasto es obligatorio."),
   amount: z.number().positive("El monto debe ser mayor a cero.").optional(),

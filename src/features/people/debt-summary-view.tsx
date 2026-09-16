@@ -143,7 +143,7 @@ export function DebtSummaryView({ personId }: { personId: string }) {
         </div>
       )}
 
-      {!hasDebts && !loading && (
+      {debts && !hasDebts && !loading && !error && (
         <div style={{ marginTop: "24px", color: "var(--muted)", fontSize: "0.9375rem" }}>
           Esta persona no tiene deudas ni cobros pendientes registrados.
         </div>
