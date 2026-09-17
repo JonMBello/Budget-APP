@@ -113,7 +113,7 @@ function calculateCycle(card, dateStr) {
   const daysUntilDue = Math.max(0, Math.round((tDue - tPurchase) / (1000 * 60 * 60 * 24)));
 
   return {
-    statementCutoffDate,
+    cutoffDate: statementCutoffDate,
     paymentDueDate,
     impactBudgetYear: dueYear,
     impactBudgetMonth: dueMonth,

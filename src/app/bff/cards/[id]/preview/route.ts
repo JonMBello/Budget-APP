@@ -1,4 +1,4 @@
-import { statementPreviewSchema } from "@/features/cards/contracts";
+import { apiStatementPreviewSchema } from "@/features/cards/contracts";
 import { failure, privateJson } from "@/lib/server/http";
 import { authenticatedRequest } from "@/lib/server/session";
 
@@ -14,8 +14,11 @@ export async function GET(
     const result = await authenticatedRequest<unknown>(
       `/cards/${id}/preview-statement${query}`,
     );
-    const preview = statementPreviewSchema.parse(result);
-    return privateJson(preview);
+    const preview = apiStatementPreviewSchema.safeParse(result);
+    if (!preview.success) {
+      return privateJson({ message: "No pudimos calcular el ciclo bancario. Inténtalo de nuevo." }, 502);
+    }
+    return privateJson(preview.data);
   } catch (error) {
     return failure(error);
   }

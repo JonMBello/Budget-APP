@@ -112,7 +112,7 @@ export const cardSchema = z.object({
 export type Card = z.infer<typeof cardSchema>;
 
 export const statementPreviewSchema = z.object({
-  statementCutoffDate: z.string(),
+  statementCutoffDate: z.string().nullable(),
   paymentDueDate: z.string(),
   impactBudgetYear: z.number().int(),
   impactBudgetMonth: z.number().int(),
@@ -120,3 +120,11 @@ export const statementPreviewSchema = z.object({
 });
 
 export type StatementPreview = z.infer<typeof statementPreviewSchema>;
+
+export const apiStatementPreviewSchema = statementPreviewSchema
+  .omit({ statementCutoffDate: true })
+  .extend({ cutoffDate: z.string().nullable() })
+  .transform(({ cutoffDate, ...preview }) => ({
+    ...preview,
+    statementCutoffDate: cutoffDate,
+  }));

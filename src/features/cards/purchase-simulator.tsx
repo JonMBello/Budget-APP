@@ -75,6 +75,8 @@ export function PurchaseSimulator({ cardId }: { cardId: string }) {
           onChange={(e) => {
             setLoading(true);
             setError("");
+            setPreview(null);
+            if (!e.target.value) setLoading(false);
             setPurchaseDate(e.target.value);
           }}
         />
@@ -92,11 +94,11 @@ export function PurchaseSimulator({ cardId }: { cardId: string }) {
         </div>
       )}
 
-      {preview && !loading && (
+      {preview && !loading && !error && (
         <div className="simulator-grid" aria-live="polite">
           <div className="simulator-metric">
             <p className="label">Corte bancario</p>
-            <p className="val">{preview.statementCutoffDate}</p>
+            <p className="val">{preview.statementCutoffDate ?? "No aplica"}</p>
           </div>
 
           <div className="simulator-metric">
