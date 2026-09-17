@@ -106,6 +106,7 @@ export default async function ExpensesPage(props: {
 
   return (
     <TransactionsList
+      key={activePeriod.id}
       type="expenses"
       period={activePeriod}
       allPeriods={allPeriods}

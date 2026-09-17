@@ -97,6 +97,7 @@ export default async function IncomesPage(props: {
 
   return (
     <TransactionsList
+      key={activePeriod.id}
       type="incomes"
       period={activePeriod}
       allPeriods={allPeriods}
