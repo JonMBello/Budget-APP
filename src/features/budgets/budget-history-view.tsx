@@ -239,7 +239,7 @@ export function BudgetHistoryView({
               </select>
             </div>
 
-            <span style={{ fontWeight: 700, color: "var(--muted)", marginTop: "24px" }}>
+            <span className="comparator-separator">
               frente a
             </span>
 
