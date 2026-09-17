@@ -1,5 +1,7 @@
 "use client";
 
+import { TransactionFormDialog } from "./transaction-form-dialog";
+
 import { useEffect, useState } from "react";
 import { Field, AmountField, DateField, ErrorState } from "@/components/ui";
 import { formatDate } from "@/lib/format";
@@ -20,6 +22,7 @@ export function ExpenseForm({
   cards,
   people,
   isClosed = false,
+  modal = false,
   onSuccess,
   onCancel,
 }: {
@@ -28,6 +31,7 @@ export function ExpenseForm({
   cards: Card[];
   people: Person[];
   isClosed?: boolean;
+  modal?: boolean;
   onSuccess: (expense: Expense) => void;
   onCancel: () => void;
 }) {
@@ -172,7 +176,7 @@ export function ExpenseForm({
 
   const numericAmount = parseFloat(amount) || 0;
 
-  return (
+  const form = (
     <form
       onSubmit={handleSubmit}
       className="profile-card transaction-form"
@@ -385,4 +389,9 @@ export function ExpenseForm({
       </div>
     </form>
   );
+  return modal ? (
+    <TransactionFormDialog title={isEditing ? "Editar gasto" : "Registrar gasto"} pending={pending} onCancel={onCancel}>
+      {form}
+    </TransactionFormDialog>
+  ) : form;
 }

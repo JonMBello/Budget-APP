@@ -327,11 +327,12 @@ export function TransactionsList(props: TransactionsListProps) {
             </button>
           )}
 
-          {!isClosed && !showForm && (
+          {!isClosed && (
             <button
               type="button"
               className="button"
-              onClick={() => {
+              onClick={(event) => {
+                event.currentTarget.focus({ preventScroll: true });
                 setEditingExpense(null);
                 setEditingIncome(null);
                 setShowForm(true);
@@ -419,6 +420,7 @@ export function TransactionsList(props: TransactionsListProps) {
       {/* Forms modal or inline view */}
       {showForm && isExpenses && (
         <ExpenseForm
+          modal
           periodId={period.id}
           expense={editingExpense}
           cards={cards}
@@ -441,6 +443,7 @@ export function TransactionsList(props: TransactionsListProps) {
 
       {showForm && !isExpenses && (
         <IncomeForm
+          modal
           periodId={period.id}
           income={editingIncome}
           people={people}
@@ -470,11 +473,11 @@ export function TransactionsList(props: TransactionsListProps) {
                 : "No hay gastos con los filtros aplicados"
             }
             action={
-              !isClosed && !showForm && (
+              !isClosed && (
                 <button
                   type="button"
                   className="button"
-                  onClick={() => setShowForm(true)}
+                  onClick={(event) => { event.currentTarget.focus({ preventScroll: true }); setShowForm(true); }}
                 >
                   Registrar mi primer gasto
                 </button>
@@ -516,11 +519,11 @@ export function TransactionsList(props: TransactionsListProps) {
               : "No hay ingresos con los filtros aplicados"
           }
           action={
-            !isClosed && !showForm && (
+            !isClosed && (
               <button
                 type="button"
                 className="button"
-                onClick={() => setShowForm(true)}
+                onClick={(event) => { event.currentTarget.focus({ preventScroll: true }); setShowForm(true); }}
               >
                 Registrar mi primer ingreso
               </button>

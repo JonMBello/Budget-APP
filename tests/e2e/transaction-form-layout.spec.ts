@@ -12,12 +12,19 @@ for (const viewport of [{ width: 820, height: 1180 }, { width: 1180, height: 820
 
     for (const [route, kind] of [["expenses", "gasto"], ["incomes", "ingreso"]]) {
       await page.goto(`/app/${route}?period=2026-09`);
-      await page.getByRole("button", { name: `+ Registrar ${kind}`, exact: true }).click();
+      const trigger = page.getByRole("button", { name: `+ Registrar ${kind}`, exact: true });
+      const filters = page.getByRole("region", { name: "Filtros de movimientos" });
+      await trigger.scrollIntoViewIfNeeded();
+      const filtersBefore = await filters.boundingBox();
+      await trigger.click();
+      await expect(page.getByRole("dialog", { name: `Registrar ${kind}`, exact: true })).toBeVisible();
       const form = page.getByRole("form", { name: `Registrar nuevo ${kind}` });
       await expect(form).toBeVisible();
       const formBox = (await form.boundingBox())!;
-      const filtersBox = (await page.getByRole("region", { name: "Filtros de movimientos" }).boundingBox())!;
-      expect(formBox.y - (filtersBox.y + filtersBox.height)).toBeGreaterThanOrEqual(23);
+      expect(await filters.boundingBox()).toEqual(filtersBefore);
+      const dialogBox = (await page.getByRole("dialog").boundingBox())!;
+      expect(dialogBox.y).toBeGreaterThanOrEqual(0);
+      expect(dialogBox.y + dialogBox.height).toBeLessThanOrEqual(viewport.height);
 
       for (const control of await form.locator("input, select, textarea").all()) {
         const box = (await control.boundingBox())!;
@@ -38,6 +45,13 @@ for (const viewport of [{ width: 820, height: 1180 }, { width: 1180, height: 820
       await checkbox.check();
       await expect(checkbox).toBeChecked();
       await page.screenshot({ path: test.info().outputPath(`${route}-${viewport.width}.png`), fullPage: true });
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await expect(trigger).toBeFocused();
+      await trigger.click();
+      await page.getByRole("button", { name: "Cancelar", exact: true }).click();
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await expect(trigger).toBeFocused();
     }
   });
 }

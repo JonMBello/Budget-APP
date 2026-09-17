@@ -1,5 +1,7 @@
 "use client";
 
+import { TransactionFormDialog } from "./transaction-form-dialog";
+
 import { personContact } from "@/features/people/contracts";
 
 import { useState } from "react";
@@ -17,6 +19,7 @@ export function IncomeForm({
   income,
   people,
   isClosed = false,
+  modal = false,
   onSuccess,
   onCancel,
 }: {
@@ -24,6 +27,7 @@ export function IncomeForm({
   income?: Income | null;
   people: Person[];
   isClosed?: boolean;
+  modal?: boolean;
   onSuccess: (income: Income) => void;
   onCancel: () => void;
 }) {
@@ -109,7 +113,7 @@ export function IncomeForm({
     }
   }
 
-  return (
+  const form = (
     <form
       onSubmit={handleSubmit}
       className="profile-card transaction-form"
@@ -304,4 +308,9 @@ export function IncomeForm({
       </div>
     </form>
   );
+  return modal ? (
+    <TransactionFormDialog title={isEditing ? "Editar ingreso" : "Registrar ingreso"} pending={pending} onCancel={onCancel}>
+      {form}
+    </TransactionFormDialog>
+  ) : form;
 }
