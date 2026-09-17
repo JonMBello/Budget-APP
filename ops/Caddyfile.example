@@ -9,6 +9,11 @@ budget.jonmb.com {
     handle @app {
         reverse_proxy 127.0.0.1:3003
     }
+    @root_icons path /apple-touch-icon.png /apple-touch-icon-precomposed.png /apple-icon.png /favicon.ico
+    handle @root_icons {
+        rewrite * /app{path}
+        reverse_proxy 127.0.0.1:3003
+    }
     handle / {
         redir /app 302
     }

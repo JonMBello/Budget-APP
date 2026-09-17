@@ -1,4 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+import { writeFile } from "node:fs/promises";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import sharp from "sharp";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const publicDir = resolve(__dirname, "../public");
+
+export const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#111c30" />
@@ -26,3 +34,37 @@
     <circle cx="374" cy="365" r="18" fill="#f1f5f9" />
   </g>
 </svg>
+`;
+
+async function generate() {
+  const svgBuffer = Buffer.from(svgIcon);
+
+  // 1. Write master SVG to public/icon.svg
+  await writeFile(resolve(publicDir, "icon.svg"), svgIcon, "utf8");
+  console.log("✓ Generated public/icon.svg");
+
+  // 2. Configurations for PNG outputs
+  const targets = [
+    { file: "apple-icon.png", size: 180 },
+    { file: "apple-touch-icon.png", size: 180 },
+    { file: "apple-touch-icon-precomposed.png", size: 180 },
+    { file: "icon-192.png", size: 192 },
+    { file: "icon-512.png", size: 512 },
+  ];
+
+  for (const target of targets) {
+    const dest = resolve(publicDir, target.file);
+    await sharp(svgBuffer)
+      .resize(target.size, target.size)
+      .png({ compressionLevel: 9 })
+      .toFile(dest);
+    console.log(`✓ Generated public/${target.file} (${target.size}x${target.size})`);
+  }
+
+  console.log("All icons generated successfully!");
+}
+
+generate().catch((err) => {
+  console.error("Error generating icons:", err);
+  process.exit(1);
+});

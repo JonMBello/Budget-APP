@@ -10,6 +10,8 @@ const publicPaths = new Set([
   "/icon-192.png",
   "/icon-512.png",
   "/apple-icon.png",
+  "/apple-touch-icon.png",
+  "/apple-touch-icon-precomposed.png",
 ]);
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;

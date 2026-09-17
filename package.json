@@ -10,6 +10,7 @@
   },
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1 --port 3003",
+    "generate:icons": "node scripts/generate-icons.mjs",
     "build": "next build && node scripts/prepare-standalone.mjs",
     "start": "HOSTNAME=127.0.0.1 PORT=3003 node .next/standalone/server.js",
     "lint": "eslint .",

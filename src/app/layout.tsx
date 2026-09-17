@@ -13,8 +13,14 @@ export const metadata: Metadata = {
     title: "Budget",
   },
   icons: {
-    icon: "/app/icon.svg",
-    apple: "/app/apple-icon.png",
+    icon: [
+      { url: "/app/icon.svg", type: "image/svg+xml" },
+      { url: "/app/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [
+      { url: "/app/apple-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/app/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
   robots: { index: false, follow: false },
 };
