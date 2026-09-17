@@ -91,6 +91,32 @@ afterEach(() => {
 });
 
 describe("TransactionsList", () => {
+  it("sorts expenses by registration, due date and amount while preserving filters", async () => {
+    const user = userEvent.setup();
+    const expenses: Expense[] = [
+      { ...mockExpenses[0], id: "a", title: "Gasto A", amount: 300, createdAt: "2026-03-01T10:00:00Z", paymentDueDate: "2026-03-20" },
+      { ...mockExpenses[1], id: "b", title: "Gasto B", amount: 100, createdAt: "2026-03-02T10:00:00Z", paymentDueDate: "2026-03-10" },
+      { ...mockExpenses[1], id: "c", title: "Gasto C", amount: 200 },
+    ];
+    render(<TransactionsList type="expenses" period={mockOpenPeriod} allPeriods={[mockOpenPeriod]} initialExpenses={expenses} cards={[]} people={[]} />);
+    const titles = () => screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
+    expect(titles()).toEqual(["Gasto B", "Gasto A", "Gasto C"]);
+    const select = screen.getByLabelText("Ordenar por");
+    for (const [order, expected] of [
+      ["createdAt-asc", ["Gasto A", "Gasto B", "Gasto C"]],
+      ["paymentDueDate-asc", ["Gasto B", "Gasto A", "Gasto C"]],
+      ["paymentDueDate-desc", ["Gasto A", "Gasto B", "Gasto C"]],
+      ["amount-asc", ["Gasto B", "Gasto C", "Gasto A"]],
+      ["amount-desc", ["Gasto A", "Gasto C", "Gasto B"]],
+    ] as const) {
+      await user.selectOptions(select, order);
+      expect(titles()).toEqual(expected);
+    }
+    await user.click(screen.getByRole("button", { name: "Pendientes" }));
+    expect(titles()).toEqual(["Gasto C", "Gasto B"]);
+    expect(expenses.map((expense) => expense.id)).toEqual(["a", "b", "c"]);
+  });
+
   it("renders expenses list with metrics, search filter, and shows form when clicking button", async () => {
     const user = userEvent.setup();
 

@@ -56,6 +56,7 @@ export function TransactionsList(props: TransactionsListProps) {
     !isExpenses ? props.initialIncomes : [],
   );
 
+  const [expenseSort, setExpenseSort] = useState("createdAt-desc");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "DONE" | "PENDING">("ALL");
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
@@ -104,8 +105,21 @@ export function TransactionsList(props: TransactionsListProps) {
       if (statusFilter === "PENDING" && e.isPaid) return false;
       if (categoryFilter !== "ALL" && e.category !== categoryFilter) return false;
       return true;
+    }).sort((a, b) => {
+      const [field, direction] = expenseSort.split("-");
+      const value = (expense: Expense): number | null => {
+        if (field === "amount") return expense.amount;
+        const date = field === "createdAt" ? expense.createdAt : expense.paymentDueDate;
+        const timestamp = date ? Date.parse(date) : NaN;
+        return Number.isFinite(timestamp) ? timestamp : null;
+      };
+      const left = value(a);
+      const right = value(b);
+      if (left === null) return right === null ? 0 : 1;
+      if (right === null) return -1;
+      return (left - right) * (direction === "asc" ? 1 : -1);
     });
-  }, [isExpenses, expenses, search, statusFilter, categoryFilter]);
+  }, [isExpenses, expenses, search, statusFilter, categoryFilter, expenseSort]);
 
   // Filtering for incomes
   const filteredIncomes = useMemo(() => {
@@ -376,6 +390,19 @@ export function TransactionsList(props: TransactionsListProps) {
               ))}
             </select>
           </label>
+          {isExpenses && (
+            <label className="transaction-filter-field">
+              <span>Ordenar por</span>
+              <select value={expenseSort} onChange={(e) => setExpenseSort(e.target.value)}>
+                <option value="createdAt-desc">Registro: más recientes primero</option>
+                <option value="createdAt-asc">Registro: más antiguos primero</option>
+                <option value="paymentDueDate-asc">Vencimiento: más próximos primero</option>
+                <option value="paymentDueDate-desc">Vencimiento: más lejanos primero</option>
+                <option value="amount-asc">Importe: menor a mayor</option>
+                <option value="amount-desc">Importe: mayor a menor</option>
+              </select>
+            </label>
+          )}
         </div>
         <div className="transaction-filter-summary">
           <span role="status" aria-live="polite">
