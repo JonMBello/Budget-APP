@@ -41,10 +41,8 @@ test.describe("PWA, Web Push and Reminders (FE-09)", () => {
   }) => {
     await login(request);
 
-    // 1. Get public key
-    const keyRes = await request.get("/app/bff/notifications/web-push/public-key", {
-      headers: { Origin: origin },
-    });
+    // 1. Get public key (browsers do not send Origin header on same-origin GET)
+    const keyRes = await request.get("/app/bff/notifications/web-push/public-key");
     expect(keyRes.status()).toBe(200);
     const keyData = await keyRes.json();
     expect(typeof keyData.publicKey).toBe("string");

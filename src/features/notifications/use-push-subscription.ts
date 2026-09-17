@@ -84,7 +84,8 @@ export function usePushSubscription() {
       // Fetch VAPID public key from BFF
       const keyRes = await fetch("/app/bff/notifications/web-push/public-key");
       if (!keyRes.ok) {
-        throw new Error("No se pudo obtener la clave pública del servidor de notificaciones.");
+        const errJson = await keyRes.json().catch(() => ({}));
+        throw new Error(errJson.message || "No se pudo obtener la clave pública del servidor de notificaciones.");
       }
       const keyData = await keyRes.json();
       const applicationServerKey = urlBase64ToUint8Array(keyData.publicKey);
