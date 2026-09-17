@@ -36,6 +36,9 @@ h1 { font-size: clamp(1.8rem, 4vw, 2.5rem); }
   .agenda-item-left, .debtor-info { min-width: 0; }
   .agenda-item-right { width: 100%; flex-wrap: wrap; justify-content: space-between; }
   .period-selector-wrap { flex-wrap: wrap; max-width: 100%; }
+  .period-actions { width: 100%; }
+  .period-actions > .period-selector-wrap { display: contents; }
+  .period-actions > .period-selector-wrap > .period-select { flex: 0 0 100%; min-width: 0; width: 100%; }
   .filter-group { flex-wrap: wrap; max-width: 100%; }
   .dialog-actions { flex-wrap: wrap; }
   .dialog-actions .button { flex: 1; }

@@ -59,7 +59,7 @@ export function PeriodStatusControl({
           <button
             type="button"
             className="button secondary"
-            style={{ minHeight: "40px", padding: "8px 16px", fontSize: "0.875rem" }}
+            style={{ minHeight: "44px", padding: "8px 16px", fontSize: "0.875rem" }}
             onClick={() => handleTriggerClick("CLOSED")}
           >
             Cerrar mes
@@ -68,7 +68,7 @@ export function PeriodStatusControl({
           <button
             type="button"
             className="button secondary"
-            style={{ minHeight: "40px", padding: "8px 16px", fontSize: "0.875rem" }}
+            style={{ minHeight: "44px", padding: "8px 16px", fontSize: "0.875rem" }}
             onClick={() => handleTriggerClick("OPEN")}
           >
             Reabrir mes
