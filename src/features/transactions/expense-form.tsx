@@ -175,8 +175,7 @@ export function ExpenseForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="profile-card"
-      style={{ maxWidth: "640px", margin: "0 auto 32px" }}
+      className="profile-card transaction-form"
       aria-label={isEditing ? "Editar gasto" : "Registrar nuevo gasto"}
     >
       <h2 style={{ fontSize: "1.4rem", marginBottom: "8px" }}>
@@ -216,7 +215,7 @@ export function ExpenseForm({
         disabled={isClosed || pending}
       />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+      <div className="transaction-form-row">
         <AmountField
           label="Importe ($)"
           id="expense-amount"
@@ -246,7 +245,7 @@ export function ExpenseForm({
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+      <div className="transaction-form-row">
         <DateField
           label="Fecha de la compra"
           id="expense-date"
@@ -295,7 +294,7 @@ export function ExpenseForm({
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+      <div className="transaction-form-row">
         <DateField
           label="Fecha de vencimiento (opcional)"
           id="expense-payment-due-date"

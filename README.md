@@ -109,7 +109,7 @@ npm run typecheck
 npm run verify        # lint + tipos + tests + build + e2e
 ```
 
-Para e2e en local: `npx playwright install chromium`.
+Para e2e en local: `npx playwright install chromium webkit`.
 
 ---
 
