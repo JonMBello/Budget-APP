@@ -3,6 +3,8 @@ import {
   createPersonSchema,
   personSchema,
   debtSummarySchema,
+  apiDebtSummarySchema,
+  periodDebtsSchema,
   settleDebtSchema,
   updatePersonSchema,
 } from "./contracts";
@@ -67,6 +69,43 @@ describe("people contracts", () => {
       totalDebt: 3500.5,
       immediateDueAmount: 1200,
       nextPaymentDueDate: "2026-10-05",
+      periods: [
+        {
+          period: "2026-09",
+          year: 2026,
+          month: 9,
+          periodName: "Septiembre 2026",
+          periodId: "p-1",
+          totalDebt: 1200,
+          msiInstallments: [
+            {
+              title: "MacBook Pro",
+              currentInstallment: 2,
+              totalInstallments: 6,
+              amount: 1500,
+              remainingAmount: 6000,
+              paymentDueDate: "2026-10-05",
+              cardName: "Banorte Platino",
+            },
+          ],
+          recurringServices: [
+            {
+              title: "Netflix 4K",
+              amount: 250,
+              paymentDueDate: "2026-10-01",
+            },
+          ],
+          singleExpenses: [
+            {
+              expenseId: "exp-123",
+              title: "Cena de cumpleaños",
+              amount: 950,
+              paymentDueDate: "2026-09-25",
+              settled: false,
+            },
+          ],
+        },
+      ],
       msiInstallments: [
         {
           title: "MacBook Pro",
@@ -95,6 +134,82 @@ describe("people contracts", () => {
       ],
     });
     expect(result.success).toBe(true);
+  });
+
+  it("validates and transforms upstream apiDebtSummarySchema V2", () => {
+    const parsed = apiDebtSummarySchema.parse({
+      personId: "person-99",
+      name: "Ilse López",
+      totalDebt: 3723.4,
+      periods: [
+        {
+          period: "2026-09",
+          year: 2026,
+          month: 9,
+          periodName: "Septiembre 2026",
+          periodId: "p-sept",
+          totalDebt: 1193,
+          msiInstallments: [
+            {
+              id: "msi-1",
+              title: "Ben & Frank",
+              cardName: "Credit Card",
+              currentInstallment: 2,
+              totalInstallments: 2,
+              installmentAmount: 1193,
+              remainingAmount: 1193,
+              nextDueDate: "2026-09-30",
+            },
+          ],
+          recurringServices: [],
+          singleExpenses: [],
+        },
+        {
+          period: "2026-10",
+          year: 2026,
+          month: 10,
+          periodName: "Octubre 2026",
+          periodId: null,
+          totalDebt: 2530.4,
+          msiInstallments: [
+            {
+              id: "msi-2",
+              title: "Macbook Pro de Ilse",
+              cardName: "Credit Card",
+              currentInstallment: 4,
+              totalInstallments: 5,
+              installmentAmount: 2530.4,
+              remainingAmount: 5060.8,
+              nextDueDate: "2026-10-30",
+            },
+          ],
+          recurringServices: [],
+          singleExpenses: [],
+        },
+      ],
+    });
+
+    expect(parsed.totalDebt).toBe(3723.4);
+    expect(parsed.immediateDueAmount).toBe(1193);
+    expect(parsed.nextPaymentDueDate).toBe("2026-09-30");
+    expect(parsed.periods).toHaveLength(2);
+    expect(parsed.periods[0].msiInstallments[0].amount).toBe(1193);
+    expect(parsed.periods[0].msiInstallments[0].paymentDueDate).toBe("2026-09-30");
+    expect(parsed.periods[1].periodId).toBeNull();
+  });
+
+  it("validates individual periodDebtsSchema", () => {
+    const valid = periodDebtsSchema.safeParse({
+      period: "2026-09",
+      year: 2026,
+      month: 9,
+      periodName: "Septiembre 2026",
+      totalDebt: 500,
+      msiInstallments: [],
+      recurringServices: [],
+      singleExpenses: [],
+    });
+    expect(valid.success).toBe(true);
   });
 
   it("validates settleDebtSchema", () => {

@@ -276,6 +276,69 @@ const server = createServer(async (request, response) => {
     }
   }
 
+  const debtsV2Match = pathname.match(/^\/api\/v2\/people\/([^/]+)\/debts$/);
+  if (debtsV2Match && request.method === "GET") {
+    const personId = debtsV2Match[1];
+    const peopleMap = getPeople(user.id);
+    const person = peopleMap.get(personId);
+    if (!person) return send(404, { message: "Person not found" });
+
+    const hasDebt = person.name.includes("Deuda");
+    const debts = {
+      personId: person.id,
+      name: person.name,
+      phoneCode: person.phoneCode ?? null,
+      phone: person.phone ?? null,
+      email: person.email ?? null,
+      totalDebt: hasDebt ? 2500 : 0,
+      periods: hasDebt
+        ? [
+            {
+              period: "2026-09",
+              year: 2026,
+              month: 9,
+              periodName: "Septiembre 2026",
+              periodId: "period-2026-09",
+              totalDebt: 2500,
+              msiInstallments: [
+                {
+                  id: "msi-1",
+                  title: "Laptop Trabajo",
+                  currentInstallment: 2,
+                  totalInstallments: 6,
+                  installmentAmount: 1500,
+                  remainingAmount: 6000,
+                  nextDueDate: "2026-10-05",
+                  cardName: "Banorte Oro",
+                },
+              ],
+              recurringServices: [
+                {
+                  id: "rec-1",
+                  title: "Spotify Familiar",
+                  amount: 200,
+                  cardName: "Banorte Oro",
+                  nextDueDate: "2026-10-01",
+                },
+              ],
+              singleExpenses: [
+                {
+                  id: "exp-single-1",
+                  title: "Cena en restaurante",
+                  cardName: "Banorte Oro",
+                  amount: 800,
+                  date: "2026-09-02",
+                  paymentDueDate: "2026-09-20",
+                  isPaid: false,
+                },
+              ],
+            },
+          ]
+        : [],
+    };
+    return send(200, debts);
+  }
+
   const debtsMatch = pathname.match(/^\/api\/people\/([^/]+)\/debts$/);
   if (debtsMatch && request.method === "GET") {
     const personId = debtsMatch[1];

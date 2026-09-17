@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params;
-    const result = await authenticatedRequest<unknown>(`/people/${id}/debts`);
+    const result = await authenticatedRequest<unknown>(`/v2/people/${id}/debts`);
     const debts = apiDebtSummarySchema.safeParse(result);
     if (!debts.success) {
       return privateJson({ message: "No pudimos consultar las deudas de esta persona. Inténtalo de nuevo." }, 502);

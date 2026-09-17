@@ -8,6 +8,62 @@ const debtsFixture: DebtSummary = {
   totalDebt: 3200,
   immediateDueAmount: 1200,
   nextPaymentDueDate: "2026-10-05",
+  periods: [
+    {
+      period: "2026-09",
+      year: 2026,
+      month: 9,
+      periodName: "Septiembre 2026",
+      periodId: "p-100",
+      totalDebt: 1200,
+      msiInstallments: [
+        {
+          title: "PlayStation 5",
+          currentInstallment: 3,
+          totalInstallments: 12,
+          amount: 1000,
+          paymentDueDate: "2026-10-05",
+          cardName: "BBVA Oro",
+        },
+      ],
+      recurringServices: [
+        {
+          title: "YouTube Premium",
+          amount: 200,
+          paymentDueDate: "2026-10-01",
+        },
+      ],
+      singleExpenses: [
+        {
+          expenseId: "exp-single-99",
+          title: "Cena en terraza",
+          amount: 800,
+          paymentDueDate: "2026-09-25",
+          settled: false,
+        },
+      ],
+    },
+    {
+      period: "2026-10",
+      year: 2026,
+      month: 10,
+      periodName: "Octubre 2026",
+      periodId: null,
+      totalDebt: 2000,
+      msiInstallments: [
+        {
+          title: "Monitor 4K",
+          currentInstallment: 1,
+          totalInstallments: 6,
+          amount: 1000,
+          paymentDueDate: "2026-11-05",
+          cardName: "BBVA Oro",
+        },
+      ],
+      recurringServices: [],
+      singleExpenses: [],
+    },
+  ],
   msiInstallments: [
     {
       title: "PlayStation 5",
@@ -117,6 +173,7 @@ describe("DebtSummaryView", () => {
           totalDebt: 0,
           immediateDueAmount: 0,
           nextPaymentDueDate: null,
+          periods: [],
           msiInstallments: [],
           recurringServices: [],
           singleExpenses: [],
@@ -129,5 +186,33 @@ describe("DebtSummaryView", () => {
     expect(
       await screen.findByText("Esta persona no tiene deudas ni cobros pendientes registrados."),
     ).toBeInTheDocument();
+  });
+
+  it("filters items by period when clicking period tabs", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => debtsFixture,
+      }),
+    );
+    const user = userEvent.setup();
+    render(<DebtSummaryView personId="person-100" />);
+
+    expect(await screen.findByText("Septiembre 2026")).toBeInTheDocument();
+    expect(screen.getByText("Periodo actual")).toBeInTheDocument();
+    expect(screen.getByText("Octubre 2026")).toBeInTheDocument();
+    expect(screen.getByText("Proyección futura")).toBeInTheDocument();
+    expect(screen.getByText("PlayStation 5")).toBeInTheDocument();
+    expect(screen.getByText("Monitor 4K")).toBeInTheDocument();
+
+    // Filter by October 2026
+    const octoberTab = screen.getByRole("button", { name: /Octubre 2026/ });
+    await user.click(octoberTab);
+
+    expect(screen.getByText("Monitor 4K")).toBeInTheDocument();
+    expect(screen.queryByText("PlayStation 5")).not.toBeInTheDocument();
+    expect(screen.queryByText("Septiembre 2026")).not.toBeInTheDocument();
   });
 });

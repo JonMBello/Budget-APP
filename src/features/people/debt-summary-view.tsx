@@ -12,6 +12,7 @@ export function DebtSummaryView({ personId }: { personId: string }) {
   const [error, setError] = useState("");
   const [settlingId, setSettlingId] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState("");
+  const [selectedPeriodTab, setSelectedPeriodTab] = useState<string>("ALL");
 
   useEffect(() => {
     let ignore = false;
@@ -84,6 +85,7 @@ export function DebtSummaryView({ personId }: { personId: string }) {
     );
   }
 
+  const periods = debts?.periods ?? [];
   const msiInstallments = debts?.msiInstallments ?? [];
   const recurringServices = debts?.recurringServices ?? [];
   const singleExpenses = debts?.singleExpenses ?? [];
@@ -93,9 +95,23 @@ export function DebtSummaryView({ personId }: { personId: string }) {
   const hasDebts =
     debts &&
     (totalDebt > 0 ||
+      periods.some(
+        (p) =>
+          p.totalDebt > 0 ||
+          p.msiInstallments.length > 0 ||
+          p.recurringServices.length > 0 ||
+          p.singleExpenses.length > 0,
+      ) ||
       msiInstallments.length > 0 ||
       recurringServices.length > 0 ||
       singleExpenses.length > 0);
+
+  const displayedPeriods =
+    periods.length > 0
+      ? selectedPeriodTab === "ALL"
+        ? periods
+        : periods.filter((p) => p.period === selectedPeriodTab)
+      : [];
 
   return (
     <section className="debt-widget" aria-labelledby="debts-title">
@@ -149,97 +165,261 @@ export function DebtSummaryView({ personId }: { personId: string }) {
         </div>
       )}
 
-      {debts && msiInstallments.length > 0 && (
-        <div className="debt-subsections">
-          <h3 style={{ fontSize: "1.0625rem", color: "var(--text)", marginBottom: "12px" }}>
-            Compras a Meses Sin Intereses (MSI)
-          </h3>
-          <div className="debt-items-list" role="list">
-            {msiInstallments.map((item, idx) => (
-              <div key={idx} className="debt-item-card" role="listitem">
-                <div>
-                  <p style={{ margin: 0, fontWeight: 600 }}>{item.title}</p>
-                  <p className="muted" style={{ fontSize: "0.8125rem", margin: "4px 0 0" }}>
-                    {item.currentInstallment && item.totalInstallments
-                      ? `Cuota ${item.currentInstallment} de ${item.totalInstallments}`
-                      : "Cuota activa"}{" "}
-                    {item.cardName ? `· ${item.cardName}` : ""} · Vence:{" "}
-                    {formatDate(item.paymentDueDate ?? null)}
-                  </p>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <p className="money" style={{ margin: 0, fontWeight: 700, color: "var(--blue)" }}>
-                    <Money amount={item.amount} />
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+      {debts && periods.length > 1 && (
+        <div
+          className="filter-tabs"
+          role="group"
+          aria-label="Filtrar por periodo"
+          style={{ marginTop: "24px", overflowX: "auto" }}
+        >
+          <button
+            type="button"
+            className="filter-tab"
+            aria-pressed={selectedPeriodTab === "ALL"}
+            onClick={() => setSelectedPeriodTab("ALL")}
+          >
+            Todos los periodos ({periods.length})
+          </button>
+          {periods.map((p) => (
+            <button
+              key={p.period}
+              type="button"
+              className="filter-tab"
+              aria-pressed={selectedPeriodTab === p.period}
+              onClick={() => setSelectedPeriodTab(p.period)}
+            >
+              {p.periodName} (<Money amount={p.totalDebt} />)
+            </button>
+          ))}
         </div>
       )}
 
-      {debts && recurringServices.length > 0 && (
-        <div className="debt-subsections">
-          <h3 style={{ fontSize: "1.0625rem", color: "var(--text)", marginBottom: "12px" }}>
-            Servicios y suscripciones compartidas
-          </h3>
-          <div className="debt-items-list" role="list">
-            {recurringServices.map((item, idx) => (
-              <div key={idx} className="debt-item-card" role="listitem">
-                <div>
-                  <p style={{ margin: 0, fontWeight: 600 }}>{item.title}</p>
-                  <p className="muted" style={{ fontSize: "0.8125rem", margin: "4px 0 0" }}>
-                    Vence: {formatDate(item.paymentDueDate ?? null)}
-                  </p>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <p className="money" style={{ margin: 0, fontWeight: 700, color: "var(--blue)" }}>
-                    <Money amount={item.amount} />
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {displayedPeriods.length > 0 &&
+        displayedPeriods.map((period, pIdx) => {
+          const isImmediate = pIdx === 0 && selectedPeriodTab === "ALL";
+          const isProjected = period.periodId === null;
+          const periodHasItems =
+            period.msiInstallments.length > 0 ||
+            period.recurringServices.length > 0 ||
+            period.singleExpenses.length > 0;
 
-      {debts && singleExpenses.length > 0 && (
-        <div className="debt-subsections">
-          <h3 style={{ fontSize: "1.0625rem", color: "var(--text)", marginBottom: "12px" }}>
-            Gastos y compras puntuales
-          </h3>
-          <div className="debt-items-list" role="list">
-            {debts.singleExpenses.map((item) => (
-              <div
-                key={item.expenseId}
-                className={`debt-item-card ${item.settled ? "settled" : ""}`}
-                role="listitem"
-              >
-                <div>
-                  <p style={{ margin: 0, fontWeight: 600 }}>{item.title}</p>
-                  <p className="muted" style={{ fontSize: "0.8125rem", margin: "4px 0 0" }}>
-                    Vence: {formatDate(item.paymentDueDate ?? null)}
-                  </p>
+          if (!periodHasItems && period.totalDebt === 0) return null;
+
+          return (
+            <div key={period.period} className="period-debt-card">
+              <div className="period-debt-header">
+                <div className="period-debt-title-group">
+                  <h3 className="period-debt-title">{period.periodName}</h3>
+                  {isImmediate && <span className="badge badge-success">Periodo actual</span>}
+                  {isProjected && <span className="badge badge-neutral">Proyección futura</span>}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                  <p className="money" style={{ margin: 0, fontWeight: 700, color: "var(--text)" }}>
-                    <Money amount={item.amount} />
-                  </p>
-                  {!item.settled && (
-                    <button
-                      className="button secondary"
-                      style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.8125rem" }}
-                      disabled={settlingId === item.expenseId}
-                      onClick={() => handleSettle(item.expenseId)}
-                    >
-                      {settlingId === item.expenseId ? "Cobrando…" : "Marcar cobrado"}
-                    </button>
-                  )}
+                <div className="period-debt-total">
+                  <span>Total del periodo:</span>
+                  <strong>
+                    <Money amount={period.totalDebt} />
+                  </strong>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
+
+              {period.msiInstallments.length > 0 && (
+                <div className="debt-subsections">
+                  <h4 style={{ fontSize: "1.0625rem", color: "var(--text)", marginBottom: "12px" }}>
+                    Compras a Meses Sin Intereses (MSI)
+                  </h4>
+                  <div className="debt-items-list" role="list">
+                    {period.msiInstallments.map((item, idx) => (
+                      <div key={item.id ?? idx} className="debt-item-card" role="listitem">
+                        <div>
+                          <p style={{ margin: 0, fontWeight: 600 }}>{item.title}</p>
+                          <p className="muted" style={{ fontSize: "0.8125rem", margin: "4px 0 0" }}>
+                            {item.currentInstallment && item.totalInstallments
+                              ? `Cuota ${item.currentInstallment} de ${item.totalInstallments}`
+                              : "Cuota activa"}{" "}
+                            {item.cardName ? `· ${item.cardName}` : ""} · Vence:{" "}
+                            {formatDate(item.paymentDueDate ?? null)}
+                          </p>
+                          {item.remainingAmount !== undefined && (
+                            <p className="muted" style={{ fontSize: "0.75rem", margin: "2px 0 0" }}>
+                              Saldo restante del plan: <Money amount={item.remainingAmount} />
+                            </p>
+                          )}
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <p className="money" style={{ margin: 0, fontWeight: 700, color: "var(--blue)" }}>
+                            <Money amount={item.amount} />
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {period.recurringServices.length > 0 && (
+                <div className="debt-subsections">
+                  <h4 style={{ fontSize: "1.0625rem", color: "var(--text)", marginBottom: "12px" }}>
+                    Servicios y suscripciones compartidas
+                  </h4>
+                  <div className="debt-items-list" role="list">
+                    {period.recurringServices.map((item, idx) => (
+                      <div key={item.id ?? idx} className="debt-item-card" role="listitem">
+                        <div>
+                          <p style={{ margin: 0, fontWeight: 600 }}>{item.title}</p>
+                          <p className="muted" style={{ fontSize: "0.8125rem", margin: "4px 0 0" }}>
+                            {item.cardName ? `${item.cardName} · ` : ""}Vence:{" "}
+                            {formatDate(item.paymentDueDate ?? null)}
+                          </p>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <p className="money" style={{ margin: 0, fontWeight: 700, color: "var(--blue)" }}>
+                            <Money amount={item.amount} />
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {period.singleExpenses.length > 0 && (
+                <div className="debt-subsections">
+                  <h4 style={{ fontSize: "1.0625rem", color: "var(--text)", marginBottom: "12px" }}>
+                    Gastos y compras puntuales
+                  </h4>
+                  <div className="debt-items-list" role="list">
+                    {period.singleExpenses.map((item) => (
+                      <div
+                        key={item.expenseId}
+                        className={`debt-item-card ${item.settled ? "settled" : ""}`}
+                        role="listitem"
+                      >
+                        <div>
+                          <p style={{ margin: 0, fontWeight: 600 }}>{item.title}</p>
+                          <p className="muted" style={{ fontSize: "0.8125rem", margin: "4px 0 0" }}>
+                            {item.cardName ? `${item.cardName} · ` : ""}
+                            {item.date ? `Fecha: ${formatDate(item.date)} · ` : ""}Vence:{" "}
+                            {formatDate(item.paymentDueDate ?? null)}
+                          </p>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                          <p className="money" style={{ margin: 0, fontWeight: 700, color: "var(--text)" }}>
+                            <Money amount={item.amount} />
+                          </p>
+                          {!item.settled && (
+                            <button
+                              className="button secondary"
+                              style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.8125rem" }}
+                              disabled={settlingId === item.expenseId}
+                              onClick={() => handleSettle(item.expenseId)}
+                            >
+                              {settlingId === item.expenseId ? "Cobrando…" : "Marcar cobrado"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+      {displayedPeriods.length === 0 && debts && hasDebts && (
+        <>
+          {msiInstallments.length > 0 && (
+            <div className="debt-subsections">
+              <h3 style={{ fontSize: "1.0625rem", color: "var(--text)", marginBottom: "12px" }}>
+                Compras a Meses Sin Intereses (MSI)
+              </h3>
+              <div className="debt-items-list" role="list">
+                {msiInstallments.map((item, idx) => (
+                  <div key={idx} className="debt-item-card" role="listitem">
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 600 }}>{item.title}</p>
+                      <p className="muted" style={{ fontSize: "0.8125rem", margin: "4px 0 0" }}>
+                        {item.currentInstallment && item.totalInstallments
+                          ? `Cuota ${item.currentInstallment} de ${item.totalInstallments}`
+                          : "Cuota activa"}{" "}
+                        {item.cardName ? `· ${item.cardName}` : ""} · Vence:{" "}
+                        {formatDate(item.paymentDueDate ?? null)}
+                      </p>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <p className="money" style={{ margin: 0, fontWeight: 700, color: "var(--blue)" }}>
+                        <Money amount={item.amount} />
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {recurringServices.length > 0 && (
+            <div className="debt-subsections">
+              <h3 style={{ fontSize: "1.0625rem", color: "var(--text)", marginBottom: "12px" }}>
+                Servicios y suscripciones compartidas
+              </h3>
+              <div className="debt-items-list" role="list">
+                {recurringServices.map((item, idx) => (
+                  <div key={idx} className="debt-item-card" role="listitem">
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 600 }}>{item.title}</p>
+                      <p className="muted" style={{ fontSize: "0.8125rem", margin: "4px 0 0" }}>
+                        Vence: {formatDate(item.paymentDueDate ?? null)}
+                      </p>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <p className="money" style={{ margin: 0, fontWeight: 700, color: "var(--blue)" }}>
+                        <Money amount={item.amount} />
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {singleExpenses.length > 0 && (
+            <div className="debt-subsections">
+              <h3 style={{ fontSize: "1.0625rem", color: "var(--text)", marginBottom: "12px" }}>
+                Gastos y compras puntuales
+              </h3>
+              <div className="debt-items-list" role="list">
+                {singleExpenses.map((item) => (
+                  <div
+                    key={item.expenseId}
+                    className={`debt-item-card ${item.settled ? "settled" : ""}`}
+                    role="listitem"
+                  >
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 600 }}>{item.title}</p>
+                      <p className="muted" style={{ fontSize: "0.8125rem", margin: "4px 0 0" }}>
+                        Vence: {formatDate(item.paymentDueDate ?? null)}
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                      <p className="money" style={{ margin: 0, fontWeight: 700, color: "var(--text)" }}>
+                        <Money amount={item.amount} />
+                      </p>
+                      {!item.settled && (
+                        <button
+                          className="button secondary"
+                          style={{ minHeight: "36px", padding: "6px 14px", fontSize: "0.8125rem" }}
+                          disabled={settlingId === item.expenseId}
+                          onClick={() => handleSettle(item.expenseId)}
+                        >
+                          {settlingId === item.expenseId ? "Cobrando…" : "Marcar cobrado"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </section>
   );

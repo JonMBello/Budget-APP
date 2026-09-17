@@ -27,6 +27,7 @@ describe("PersonDetail", () => {
         json: async () => ({
           totalDebt: 0,
           immediateDueAmount: 0,
+          periods: [],
           msiInstallments: [],
           recurringServices: [],
           singleExpenses: [],
@@ -57,6 +58,7 @@ describe("PersonDetail", () => {
           json: async () => ({
             totalDebt: 0,
             immediateDueAmount: 0,
+            periods: [],
             msiInstallments: [],
             recurringServices: [],
             singleExpenses: [],
