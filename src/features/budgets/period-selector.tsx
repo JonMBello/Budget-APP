@@ -19,6 +19,9 @@ export function PeriodSelector({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [showWizard, setShowWizard] = useState(false);
+  const sortedPeriods = [...periods].sort(
+    (a, b) => a.year - b.year || a.month - b.month,
+  );
 
   const activePeriodKey =
     validPeriod(searchParams.get("period")) ??
@@ -42,7 +45,7 @@ export function PeriodSelector({
         onChange={handleSelect}
         aria-label="Seleccionar mes activo"
       >
-        {periods.map((p) => {
+        {sortedPeriods.map((p) => {
           const key = toPeriodKey(p.year, p.month);
           return (
             <option key={key} value={key}>

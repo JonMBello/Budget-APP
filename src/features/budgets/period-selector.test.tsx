@@ -39,6 +39,20 @@ afterEach(() => {
 });
 
 describe("PeriodSelector", () => {
+  it("orders months chronologically across years while retaining the selected month", () => {
+    const periods = [
+      { ...mockPeriods[0], id: "next-year", year: 2027, month: 1 },
+      ...mockPeriods,
+      { ...mockPeriods[0], id: "previous-year", year: 2025, month: 12 },
+    ];
+    render(<PeriodSelector periods={periods} currentPeriod={mockPeriods[0]} />);
+
+    expect(screen.getAllByRole("option").map((option) => (option as HTMLOptionElement).value))
+      .toEqual(["2025-12", "2026-08", "2026-09", "2027-01"]);
+    expect(screen.getByLabelText("Seleccionar mes activo")).toHaveValue("2026-09");
+    expect(periods.map((period) => period.id)).toEqual(["next-year", "b-1", "b-2", "previous-year"]);
+  });
+
   it("renders period options with month name and status", () => {
     render(
       <PeriodSelector
