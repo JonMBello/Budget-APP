@@ -42,7 +42,14 @@ export function NotificationTestCard({ userEmail }: NotificationTestCardProps) {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || "Error al enviar la prueba de notificación.");
+        let errorMsg = data.message || "Error al enviar la prueba de notificación.";
+        if (data.fields && typeof data.fields === "object") {
+          const fieldErrors = Object.entries(data.fields)
+            .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(", ") : msgs}`)
+            .join(" | ");
+          if (fieldErrors) errorMsg += ` (${fieldErrors})`;
+        }
+        throw new Error(errorMsg);
       }
 
       const data = (await res.json()) as NotificationTestResult;
@@ -152,9 +159,14 @@ export function NotificationTestCard({ userEmail }: NotificationTestCardProps) {
           style={{ marginTop: "1.5rem" }}
           data-testid="notification-test-results"
         >
-          <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.75rem" }}>
+          <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.5rem" }}>
             Resultado de la prueba ({result.channel})
           </h3>
+          {result.message && (
+            <p style={{ fontSize: "0.875rem", color: "var(--text-muted)", marginBottom: "0.75rem" }}>
+              {result.message}
+            </p>
+          )}
 
           <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
             {/* Push result breakdown */}
@@ -192,11 +204,9 @@ export function NotificationTestCard({ userEmail }: NotificationTestCardProps) {
                 <div style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
                   Estado: {result.emailResult.sent ? "Enviado con éxito" : "No enviado o SMTP no disponible"}
                 </div>
-                {result.emailResult.recipientEmail && (
-                  <div style={{ fontSize: "0.875rem", marginTop: "0.25rem" }}>
-                    Destinatario: {result.emailResult.recipientEmail}
-                  </div>
-                )}
+                <div style={{ fontSize: "0.875rem", marginTop: "0.25rem" }}>
+                  Destinatario: {result.emailResult.recipientEmail || userEmail}
+                </div>
                 {result.emailResult.error && (
                   <div style={{ fontSize: "0.8125rem", color: "var(--danger)", marginTop: "0.25rem" }}>
                     Detalle: {result.emailResult.error}

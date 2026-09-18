@@ -35,7 +35,7 @@ export type NotificationTestInput = z.infer<typeof notificationTestInputSchema>;
 
 export const pushResultSchema = z.object({
   sent: z.boolean(),
-  recipientCount: z.number().int().nonnegative(),
+  recipientCount: z.number().int().nonnegative().default(0),
   error: z.string().optional(),
 });
 export type PushResult = z.infer<typeof pushResultSchema>;
@@ -49,7 +49,7 @@ export type EmailResult = z.infer<typeof emailResultSchema>;
 
 export const notificationTestResultSchema = z.object({
   success: z.boolean(),
-  channel: notificationChannelSchema,
+  channel: notificationChannelSchema.default("ALL"),
   pushResult: pushResultSchema.optional(),
   emailResult: emailResultSchema.optional(),
   message: z.string().optional(),
@@ -58,7 +58,9 @@ export type NotificationTestResult = z.infer<typeof notificationTestResultSchema
 
 export const triggerRemindersResultSchema = z.object({
   success: z.boolean(),
-  remindersProcessed: z.number().int().nonnegative(),
+  remindersProcessed: z.number().int().nonnegative().default(0),
+  detectedUpcomingCount: z.number().int().nonnegative().optional(),
+  dispatchedAlertsCount: z.number().int().nonnegative().optional(),
   timestamp: z.string().optional(),
   message: z.string().optional(),
 });
