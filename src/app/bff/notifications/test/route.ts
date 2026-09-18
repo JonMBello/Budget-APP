@@ -6,9 +6,33 @@ import {
 import { checkOrigin, failure, privateJson } from "@/lib/server/http";
 import { authenticatedRequest } from "@/lib/server/session";
 
+type RawPushResult = {
+  sent?: number | boolean;
+  failed?: number;
+  recipientCount?: number;
+  endpoints?: string[];
+  error?: string;
+};
+
+type RawEmailResult = {
+  sent?: boolean;
+  success?: boolean;
+  recipientEmail?: string;
+  messageId?: string;
+  error?: string;
+};
+
+type RawTestNotificationResponse = {
+  success?: boolean;
+  channel?: NotificationChannel;
+  message?: string;
+  pushResult?: RawPushResult | null;
+  emailResult?: RawEmailResult | null;
+};
+
 export async function POST(request: Request) {
   let requestedChannel: NotificationChannel = "ALL";
-  let rawResult: any;
+  let rawResult: RawTestNotificationResponse | undefined;
 
   try {
     checkOrigin(request);
@@ -22,7 +46,7 @@ export async function POST(request: Request) {
     if (parsed.title) payload.title = parsed.title;
     if (parsed.message) payload.message = parsed.message;
 
-    rawResult = await authenticatedRequest<any>("/notifications/test", {
+    rawResult = await authenticatedRequest<RawTestNotificationResponse>("/notifications/test", {
       method: "POST",
       body: payload,
     });

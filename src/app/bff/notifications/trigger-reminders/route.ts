@@ -2,11 +2,21 @@ import { triggerRemindersResultSchema } from "@/features/notifications/contracts
 import { checkOrigin, failure, privateJson } from "@/lib/server/http";
 import { authenticatedRequest } from "@/lib/server/session";
 
+type RawTriggerRemindersResponse = {
+  success?: boolean;
+  message?: string;
+  remindersProcessed?: number;
+  detectedUpcomingCount?: number;
+  dispatchedAlertsCount?: number;
+  timestamp?: string;
+  logs?: unknown[];
+};
+
 export async function POST(request: Request) {
-  let rawResult: any;
+  let rawResult: RawTriggerRemindersResponse | undefined;
   try {
     checkOrigin(request);
-    rawResult = await authenticatedRequest<any>(
+    rawResult = await authenticatedRequest<RawTriggerRemindersResponse>(
       "/notifications/trigger-reminders",
       {
         method: "POST",
