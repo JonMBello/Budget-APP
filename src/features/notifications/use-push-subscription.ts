@@ -111,7 +111,6 @@ export function usePushSubscription() {
             p256dh: subJson.keys.p256dh,
             auth: subJson.keys.auth,
           },
-          userAgent: navigator.userAgent,
         }),
       });
 

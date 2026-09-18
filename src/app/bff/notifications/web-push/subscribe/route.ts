@@ -11,7 +11,10 @@ export async function POST(request: Request) {
       "/notifications/web-push/subscribe",
       {
         method: "POST",
-        body: parsed,
+        body: {
+          endpoint: parsed.endpoint,
+          keys: parsed.keys,
+        },
       },
     );
     return privateJson(result, 201);
